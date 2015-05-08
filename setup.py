@@ -21,7 +21,7 @@ short_description = "homologsampler"
 # This ends up displayed by the installer
 long_description = """homologsampler
 Download homolog's from the Ensembl database
-""" % __version__
+"""
 
 setup(
     name="homologsampler",
@@ -42,4 +42,8 @@ setup(
             "Operating System :: OS Independent",
             ],
     packages=['homologsampler'],
+    entry_points={
+            'console_scripts': ['one2one=homologsampler.__init__:main',
+                            ],
+        }
     )
