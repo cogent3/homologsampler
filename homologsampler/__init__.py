@@ -46,12 +46,12 @@ def get_one2one_orthologs(compara, ref_genes, outpath):
 @click.command()
 @click.option('--ref', required=True, help='Reference species.')
 @click.option('--species', required=True, help='Comma separated list of species names.')
-@click.option('--Release', required=True, help='Ensembl release.')
+@click.option('--release', required=True, help='Ensembl release.')
 @click.option('--outdir', required=True, type=click.Path(resolve_path=True), help='Path to write files.')
 @click.option('--coord_names', required=True, type=click.Path(resolve_path=True),
     help='File containing chrom/coord names, one per line.')
 @click.option('--test', is_flag=True)
-def main(ref, species, Release, outdir, coord_names, test):
+def main(ref, species, release, outdir, coord_names, test):
     try:
         acc = HostAccount(*os.environ['ENSEMBL_ACCOUNT'].split())
     except KeyError:
@@ -74,12 +74,12 @@ def main(ref, species, Release, outdir, coord_names, test):
     
     if not os.path.exists(outdir) and not test:
         os.makedirs(outdir)
-        print "Created", outpath
+        print "Created", outdir
     
-    compara = Compara(species, Release=76, account=acc)
-    ref_genome = Genome(ref, Release=76, account=acc)
+    compara = Compara(species, Release=release, account=acc)
+    ref_genome = Genome(ref, Release=release, account=acc)
     
-    print "Sampling genes"
+    print "Sampling %s genes" % ref_genome
     all_genes = ref_genome.getGenesMatching(BioType='protein_coding')
     
     if chroms:

@@ -12,7 +12,7 @@ def missing_species_names(names):
     if missing:
         result = LoadTable(header=["MISSING SPECIES"], rows=missing)
     else:
-        result is None
+        result = None
     return result
 
 def load_coord_names(infile_path):
