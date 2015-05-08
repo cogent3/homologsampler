@@ -4,7 +4,7 @@ from collections import Counter
 import click
 
 from cogent import LoadSeqs
-from cogent.db.ensembl import Compara, Genome, HostAccount
+from cogent.db.ensembl import Compara, Genome, HostAccount, Species
 
 from homologsampler.util import missing_species_names, load_coord_names
 
@@ -82,13 +82,15 @@ def main(ref, species, release, outdir, coord_names, test):
     print "Sampling %s genes" % ref_genome
     all_genes = ref_genome.getGenesMatching(BioType='protein_coding')
     
-    if chroms:
-        ref_genes = [g for g in all_genes if g.Location.CoordName in chroms]
-    else:
-        ref_genes = [g for g in all_genes]
+    with click.progressbar(all_genes,
+        label="Finding genes") as genes:
+        if chroms:
+            ref_genes = [g for g in genes if g.Location.CoordName in chroms]
+        else:
+            ref_genes = [g for g in genes]
     
     print "Getting orthologs"
-    get_one2one_orthologs(compara, ref_genes, outpath)
+    get_one2one_orthologs(compara, ref_genes, outdir)
 
 
 if __name__ == "__main__":
