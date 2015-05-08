@@ -8,7 +8,7 @@ from cogent.db.ensembl import Compara, Genome, HostAccount, Species
 
 from homologsampler.util import missing_species_names, load_coord_names
 
-def get_one2one_orthologs(compara, ref_genes, outpath):
+def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
     """returns Table of one-to-one orthologs of protein coding genes"""
     
     species = set(compara.Species)
@@ -17,7 +17,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath):
         label="Finding 1to1 orthologs") as ids:
         for gene in ids:
             outfile_name = os.path.join(outpath, "%s.fa.gz" % gene.StableId)
-            if os.path.exists(outfile_name):
+            if os.path.exists(outfile_name) and not force_overwrite:
                 written += 1
                 continue
             
@@ -50,8 +50,9 @@ def get_one2one_orthologs(compara, ref_genes, outpath):
 @click.option('--outdir', required=True, type=click.Path(resolve_path=True), help='Path to write files.')
 @click.option('--coord_names', required=True, type=click.Path(resolve_path=True),
     help='File containing chrom/coord names, one per line.')
+@click.option('--force_overwrite', is_flag=True, help="Overwrite existing files.")
 @click.option('--test', is_flag=True)
-def main(ref, species, release, outdir, coord_names, test):
+def main(ref, species, release, outdir, coord_names, force_overwrite, test):
     try:
         acc = HostAccount(*os.environ['ENSEMBL_ACCOUNT'].split())
     except KeyError:
@@ -90,7 +91,7 @@ def main(ref, species, release, outdir, coord_names, test):
             ref_genes = [g for g in genes]
     
     print "Getting orthologs"
-    get_one2one_orthologs(compara, ref_genes, outdir)
+    get_one2one_orthologs(compara, ref_genes, outdir, force_overwrite)
 
 
 if __name__ == "__main__":
