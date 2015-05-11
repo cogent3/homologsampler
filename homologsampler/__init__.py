@@ -132,7 +132,9 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     continue
                 
                 align += (filler + aln)
-            align.writeToFile(outfile_name)
+            
+            with gzip.open(outfile_name, 'w') as outfile:
+                outfile.write(align.toFasta())
 
 
 def display_ensembl_alignment_table(compara):
