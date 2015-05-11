@@ -53,7 +53,7 @@ def renamed_seqs(aln):
     for seq in aln.Seqs:
         latin = get_latin_from_label(seq.Name)
         common = Species.getCommonName(latin)
-        seq.Name = seq.Name.replace(latin, common)
+        seq.Name = common
         new.append((seq.Name, seq))
     return LoadSeqs(data=new, moltype=DNA)
 
@@ -118,7 +118,6 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 
                 aln = renamed_seqs(aln)
                 alignments.append(aln)
-                print aln.Names, common_names
             
             if not alignments:
                 continue
