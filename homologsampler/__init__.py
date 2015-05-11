@@ -88,7 +88,6 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
     with click.progressbar(ref_genes,
         label="Finding 1to1 intron orthologs") as ids:
         for gene in ids:
-            print "gene", gene
             if gene.CanonicalTranscript.Introns is None:
                 continue
             
@@ -135,6 +134,10 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             
             with gzip.open(outfile_name, 'w') as outfile:
                 outfile.write(align.toFasta())
+            
+            written += 1
+        
+        print "Wrote %d files to %s" % (written, outpath)
 
 
 def display_ensembl_alignment_table(compara):
@@ -196,13 +199,12 @@ def main(ref, species, release, outdir, coord_names, introns, method_clade_id, m
         print "Created", outdir
     
     print "Sampling %s genes" % ref_genome
-    # all_genes = ref_genome.getGenesMatching(BioType='protein_coding')
-    all_genes = ref_genome.getGenesMatching(Symbol="BRCA1")
+    all_genes = ref_genome.getGenesMatching(BioType='protein_coding')
+    #all_genes = ref_genome.getGenesMatching(Symbol="BRCA1")
     ref_genes = []
     with click.progressbar(all_genes,
         label="Finding genes") as genes:
         for index, g in enumerate(genes):
-            print g
             if limit is not None and index >= limit:
                 break
             if chroms and g.Location.CoordName not in chroms:
