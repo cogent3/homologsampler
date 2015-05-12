@@ -109,7 +109,14 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             for index, region in enumerate(regions):
                 if region is None:
                     continue
-                if Counter(region.getSpeciesSet()) != species:
+                
+                try:
+                    got = Counter(region.getSpeciesSet())
+                except AttributeError:
+                    # this is a PyCogent bug
+                    continue
+                
+                if got != species:
                     continue
                 
                 if mask_features:
@@ -207,7 +214,7 @@ def main(ref, species, release, outdir, coord_names, introns, method_clade_id, m
     
     print "Sampling %s genes" % ref_genome
     all_genes = ref_genome.getGenesMatching(BioType='protein_coding')
-    #all_genes = ref_genome.getGenesMatching(Symbol="BRCA1")
+    #all_genes = ref_genome.getGenesMatching(StableId="ENSG00000104827")
     ref_genes = []
     with click.progressbar(all_genes,
         label="Finding genes") as genes:
