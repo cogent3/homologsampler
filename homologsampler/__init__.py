@@ -50,11 +50,17 @@ def get_latin_from_label(label):
 def renamed_seqs(aln):
     """renames sequences to be just species common name"""
     new = []
+    names = Counter()
     for seq in aln.Seqs:
         latin = get_latin_from_label(seq.Name)
         common = Species.getCommonName(latin)
+        names[common] += 1
         seq.Name = common
         new.append((seq.Name, seq))
+    
+    if max(names.values()) > 1:
+        return None
+    
     return LoadSeqs(data=new, moltype=DNA)
 
 def with_masked_features(aln, reverse=False):
@@ -116,7 +122,8 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     continue
                 
                 aln = renamed_seqs(aln)
-                alignments.append(aln)
+                if aln is not None:
+                    alignments.append(aln)
             
             if not alignments:
                 continue
