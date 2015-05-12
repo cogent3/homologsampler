@@ -11,7 +11,7 @@ from homologsampler.util import missing_species_names, load_coord_names
 def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
     """writes one-to-one orthologs of protein coding genes to outpath"""
     
-    species = set(compara.Species)
+    species = Counter(compara.Species)
     written = 0
     with click.progressbar(ref_genes,
         label="Finding 1to1 orthologs") as ids:
@@ -24,7 +24,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
             syntenic = compara.getRelatedGenes(StableId=gene.StableId,
                             Relationship='ortholog_one2one')
         
-            if syntenic is None or syntenic.getSpeciesSet() != species:
+            if syntenic is None or Counter(syntenic.getSpeciesSet()) != species:
                 # skipping, not all species had a 1to1 ortholog for this gene
                 continue
             
@@ -80,7 +80,7 @@ def with_masked_features(aln, reverse=False):
 def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id,
                 mask_features, outdir, force_overwrite):
     """writes Ensembl `method` syntenic alignments to ref_genes"""
-    species = set(compara.Species)
+    species = Counter(compara.Species)
     common_names = map(Species.getCommonName, compara.Species)
     filler = LoadSeqs(data=[(n, 'N') for n in common_names], moltype=DNA)
     
@@ -103,7 +103,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             for index, region in enumerate(regions):
                 if region is None:
                     continue
-                if region.getSpeciesSet() != species:
+                if Counter(region.getSpeciesSet()) != species:
                     continue
                 
                 if mask_features:
