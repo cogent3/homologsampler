@@ -173,7 +173,7 @@ def display_ensembl_alignment_table(compara):
 @click.option('--method_clade_id', help="The align method ID to use.")
 @click.option('--mask_features', is_flag=True, help="Intron masks repeats, exons, CpG islands.")
 @click.option('--force_overwrite', is_flag=True, help="Overwrite existing files.")
-@click.option('--show_align_methods', is_flag=True, help="Hows the align methods and exists.")
+@click.option('--show_align_methods', is_flag=True, help="Shows the align methods and exits.")
 @click.option('--limit', type=int, default=0, help="Limit to this number of genes.")
 @click.option('--test', is_flag=True)
 def main(ref, species, release, outdir, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, limit, test):
