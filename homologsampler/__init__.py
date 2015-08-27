@@ -52,9 +52,9 @@ def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
                 outfile.write(seqs.toFasta() + '\n')
             
             written += 1
+            LOGGER.output_file(outfile_name)
         
     print "Wrote %d files to %s" % (written, outpath)
-    LOGGER.output_file(outpath)
     return
 
 def get_latin_from_label(label):
@@ -164,9 +164,9 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 outfile.write(align.toFasta())
             
             written += 1
+            LOGGER.output_file(outfile_name)
         
     print "Wrote %d files to %s" % (written, outpath)
-    LOGGER.output_file(outpath)
     return
 
 
