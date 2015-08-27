@@ -8,6 +8,17 @@ from cogent.db.ensembl import Compara, Genome, HostAccount, Species
 
 from homologsampler.util import missing_species_names, load_coord_names
 
+__author__ = "Gavin Huttley"
+__copyright__ = "Copyright 2014, Gavin Huttley"
+__credits__ = ["Gavin Huttley"]
+__license__ = "GPL"
+__version__ = "0.1"
+__maintainer__ = "Gavin Huttley"
+__email__ = "Gavin.Huttley@anu.edu.au"
+__status__ = "Development"
+
+LOGGER = CachingLogger(create_dir=True)
+
 def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
     """writes one-to-one orthologs of protein coding genes to outpath"""
     
@@ -214,7 +225,7 @@ def main(ref, species, release, outdir, coord_names, introns, method_clade_id, m
     
     print "Sampling %s genes" % ref_genome
     all_genes = ref_genome.getGenesMatching(BioType='protein_coding')
-    #all_genes = ref_genome.getGenesMatching(StableId="ENSG00000104827")
+    
     ref_genes = []
     with click.progressbar(all_genes,
         label="Finding genes") as genes:
@@ -233,6 +244,7 @@ def main(ref, species, release, outdir, coord_names, introns, method_clade_id, m
         print "Getting orthologous introns"
         get_syntenic_alignments_introns(compara, ref_genes, outdir, method_clade_id,
                 mask_features, outdir, force_overwrite)
+    
 
 if __name__ == "__main__":
     main()
