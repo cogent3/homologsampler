@@ -42,6 +42,10 @@ setup(
             "Operating System :: OS Independent",
             ],
     packages=['homologsampler'],
+    install_requires=[
+              'scitrack',
+          ],
+    dependency_links=['https://bitbucket.org/gavin.huttley/scitrack/get/tip.zip'],
     entry_points={
             'console_scripts': ['one2one=homologsampler.__init__:main',
                             ],

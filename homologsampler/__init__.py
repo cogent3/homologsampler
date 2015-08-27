@@ -6,6 +6,8 @@ import click
 from cogent import LoadSeqs, DNA
 from cogent.db.ensembl import Compara, Genome, HostAccount, Species
 
+from scitrack import CachingLogger
+
 from homologsampler.util import missing_species_names, load_coord_names
 
 __author__ = "Gavin Huttley"
@@ -52,6 +54,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
             written += 1
         
     print "Wrote %d files to %s" % (written, outpath)
+    LOGGER.output_file(outpath)
     return
 
 def get_latin_from_label(label):
@@ -162,7 +165,9 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             
             written += 1
         
-        print "Wrote %d files to %s" % (written, outpath)
+    print "Wrote %d files to %s" % (written, outpath)
+    LOGGER.output_file(outpath)
+    return
 
 
 def display_ensembl_alignment_table(compara):
@@ -186,8 +191,12 @@ def display_ensembl_alignment_table(compara):
 @click.option('--force_overwrite', is_flag=True, help="Overwrite existing files.")
 @click.option('--show_align_methods', is_flag=True, help="Shows the align methods and exits.")
 @click.option('--limit', type=int, default=0, help="Limit to this number of genes.")
+@click.option('--logfile_name', default="one2one.log", help="Name for log file, written to outdir.")
 @click.option('--test', is_flag=True)
-def main(ref, species, release, outdir, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, limit, test):
+@click.pass_context
+def main(ctx, ref, species, release, outdir, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, logfile_name, limit, test):
+    LOGGER.write(str(ctx.params), label="params")
+    
     limit = limit or None
     try:
         acc = HostAccount(*os.environ['ENSEMBL_ACCOUNT'].split())
@@ -210,11 +219,21 @@ def main(ref, species, release, outdir, coord_names, introns, method_clade_id, m
         print "The reference species not in species names"
         exit(-1)
     
+    runlog_path = os.path.join(outdir, logfile_name)
+    if os.path.exists(runlog_path) and not force_overwrite:
+        print "Log file already exists!"
+        print "Use force_overwrite or provide logfile_name"
+        exit(-1)
+    
+    LOGGER.log_file_path = runlog_path
+    
     compara = Compara(species, Release=release, account=acc)
     ref_genome = Genome(ref, Release=release, account=acc)
     
     if show_align_methods:
         display_ensembl_alignment_table(compara)
+    
+    LOGGER.input_file(coord_names)
     
     chroms = load_coord_names(coord_names)
     chroms = chroms or None
