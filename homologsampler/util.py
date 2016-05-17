@@ -1,3 +1,4 @@
+import sqlalchemy as sql
 from cogent import LoadTable
 from cogent.db.ensembl import Species
 
@@ -23,6 +24,18 @@ def missing_species_names(names):
     else:
         result = None
     return result
+
+def get_chrom_names(ref_species, compara):
+    """returns the list of chromosome names"""
+    genome_db = compara.ComparaDb.getTable("genome_db")
+    dnafrag = compara.ComparaDb.getTable("dnafrag")
+    joined = genome_db.join(dnafrag, onclause=genome_db.c.genome_db_id==dnafrag.c.genome_db_id)
+    condition = sql.and_(dnafrag.c.coord_system_name=="chromosome",
+                    genome_db.c.name==Species.getEnsemblDbPrefix(ref_species),
+                    dnafrag.c.is_reference==1)
+    query = sql.select([dnafrag.c.name], condition).select_from(joined)
+    chroms = [r[0] for r in query.execute()]
+    return chroms
 
 def load_coord_names(infile_path):
     """loads chrom names, assumes separate name per file"""

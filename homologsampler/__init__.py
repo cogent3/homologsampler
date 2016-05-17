@@ -8,7 +8,7 @@ from cogent.db.ensembl import Compara, Genome, HostAccount, Species
 
 from scitrack import CachingLogger
 
-from homologsampler.util import missing_species_names, load_coord_names
+from homologsampler.util import missing_species_names, get_chrom_names, load_coord_names
 
 __author__ = "Gavin Huttley"
 __copyright__ = "Copyright 2014, Gavin Huttley"
@@ -183,8 +183,8 @@ def display_ensembl_alignment_table(compara):
 @click.option('--species', required=True, help='Comma separated list of species names.')
 @click.option('--release', required=True, help='Ensembl release.')
 @click.option('--outdir', required=True, type=click.Path(resolve_path=True), help='Path to write files.')
-@click.option('--coord_names', required=True, type=click.Path(resolve_path=True),
-                    help='File containing chrom/coord names, one per line.')
+@click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
+                help='File containing chrom/coord names to restrict sampling to, one per line.')
 @click.option('--introns', is_flag=True, help="Sample syntenic alignments of introns.")
 @click.option('--method_clade_id', help="The align method ID to use.")
 @click.option('--mask_features', is_flag=True, help="Intron masks repeats, exons, CpG islands.")
@@ -195,6 +195,9 @@ def display_ensembl_alignment_table(compara):
 @click.option('--test', is_flag=True)
 @click.pass_context
 def main(ctx, ref, species, release, outdir, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, logfile_name, limit, test):
+    """Command line tool for sampling homologous sequences from Ensembl."""
+    
+    
     LOGGER.write(str(ctx.params), label="params")
     
     limit = limit or None
@@ -213,6 +216,8 @@ def main(ctx, ref, species, release, outdir, coord_names, introns, method_clade_
     if species_missing:
         print "The following species names don't match an Ensembl record. Check spelling!"
         print species_missing
+        print "\nAvailable species are:"
+        print Species
         exit(-1)
     
     if not ref in species:
@@ -221,7 +226,7 @@ def main(ctx, ref, species, release, outdir, coord_names, introns, method_clade_
     
     runlog_path = os.path.join(outdir, logfile_name)
     if os.path.exists(runlog_path) and not force_overwrite:
-        print "Log file already exists!"
+        print "Log file (%s) already exists!" % runlog_path
         print "Use force_overwrite or provide logfile_name"
         exit(-1)
     
@@ -233,9 +238,12 @@ def main(ctx, ref, species, release, outdir, coord_names, introns, method_clade_
     if show_align_methods:
         display_ensembl_alignment_table(compara)
     
-    LOGGER.input_file(coord_names)
+    if coord_names:
+        chroms = load_coord_names(coord_names)
+        LOGGER.input_file(coord_names)
+    else:
+        chroms = get_chrom_names(ref, compara)
     
-    chroms = load_coord_names(coord_names)
     chroms = chroms or None
     
     if not os.path.exists(outdir) and not test:
