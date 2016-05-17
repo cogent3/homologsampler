@@ -186,7 +186,8 @@ def display_ensembl_alignment_table(compara):
 @click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
                 help='File containing chrom/coord names to restrict sampling to, one per line.')
 @click.option('--introns', is_flag=True, help="Sample syntenic alignments of introns.")
-@click.option('--method_clade_id', help="The align method ID to use.")
+@click.option('--method_clade_id',
+    help="The align method ID to use, required if sampling introns.")
 @click.option('--mask_features', is_flag=True, help="Intron masks repeats, exons, CpG islands.")
 @click.option('--force_overwrite', is_flag=True, help="Overwrite existing files.")
 @click.option('--show_align_methods', is_flag=True, help="Shows the align methods and exits.")
