@@ -1,4 +1,4 @@
-import os, gzip, warnings
+import os, gzip, warnings, sys
 from collections import Counter
 
 import click
@@ -126,8 +126,13 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 
                 try:
                     got = Counter(region.getSpeciesSet())
-                except AttributeError:
+                except (AttributeError, AssertionError):
                     # this is a PyCogent bug
+                    error = sys.exc_info()
+                    err_type = str(error[0]).split('.')[-1][:-2]
+                    err_msg = str(error[1])
+                    msg = 'gene_stable_id=%s; err_type=%s; msg=%s' % (gene.StableId, err_type, err_msg)
+                    LOGGER.log_message(msg, label="ERROR")
                     continue
                 
                 if got != species:
