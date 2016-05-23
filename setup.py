@@ -44,8 +44,11 @@ setup(
     packages=['homologsampler'],
     install_requires=[
               'scitrack',
+              'sqlalchemy',
+              'PyMySQL',
+              'cogent==1.5.3-dev',
           ],
-    dependency_links=['https://bitbucket.org/gavin.huttley/scitrack/get/tip.zip'],
+    dependency_links=['https://github.com/GavinHuttley/pycogent/archive/master.zip#egg=cogent-1.5.3-dev'],
     entry_points={
             'console_scripts': ['one2one=homologsampler.__init__:main',
                             ],
