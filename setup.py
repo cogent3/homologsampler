@@ -34,7 +34,7 @@ setup(
     license=["GPL"],
     keywords=["science", "bioinformatics", "genetics", "evolution"],
     classifiers=[
-            "Development Status :: 5 - Production/Stable",
+            "Development Status :: 3 - Alpha",
             "Intended Audience :: Science/Research",
             "License :: OSI Approved :: GNU General Public License (GPL)",
             "Topic :: Scientific/Engineering :: Bio-Informatics",
@@ -43,14 +43,15 @@ setup(
             ],
     packages=['homologsampler'],
     install_requires=[
+              'cogent==1.5.3-dev',
               'scitrack',
               'sqlalchemy',
               'PyMySQL',
-              'cogent==1.5.3-dev',
           ],
     dependency_links=['https://github.com/GavinHuttley/pycogent/archive/master.zip#egg=cogent-1.5.3-dev'],
     entry_points={
             'console_scripts': ['one2one=homologsampler.__init__:main',
                             ],
         }
+    url="https://bitbucket.org/gavin.huttley/homologsampler"
     )
