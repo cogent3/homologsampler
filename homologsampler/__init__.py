@@ -132,6 +132,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     err_type = str(error[0]).split('.')[-1][:-2]
                     err_msg = str(error[1])
                     msg = 'gene_stable_id=%s; err_type=%s; msg=%s' % (gene.StableId, err_type, err_msg)
+                    click.echo("ERROR:" + msg, fg="red")
                     LOGGER.log_message(msg, label="ERROR")
                     continue
                 
