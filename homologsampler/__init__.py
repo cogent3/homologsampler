@@ -183,6 +183,8 @@ def display_ensembl_alignment_table(compara):
 @click.option('--species', required=True, help='Comma separated list of species names.')
 @click.option('--release', required=True, help='Ensembl release.')
 @click.option('--outdir', required=True, type=click.Path(resolve_path=True), help='Path to write files.')
+@click.option('--ensembl_account', envvar='ENSEMBL_ACCOUNT',
+    help="shell variable with MySQL account details, e.g. export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
 @click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
                 help='File containing chrom/coord names to restrict sampling to, one per line.')
 @click.option('--introns', is_flag=True, help="Sample syntenic alignments of introns.")
@@ -195,15 +197,17 @@ def display_ensembl_alignment_table(compara):
 @click.option('--logfile_name', default="one2one.log", help="Name for log file, written to outdir.")
 @click.option('--test', is_flag=True)
 @click.pass_context
-def main(ctx, ref, species, release, outdir, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, logfile_name, limit, test):
+def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, logfile_name, limit, test):
     """Command line tool for sampling homologous sequences from Ensembl."""
     
-    
-    LOGGER.write(str(ctx.params), label="params")
+    args = locals()
+    args.pop("ctx")
+    args.update(vars(ctx))
+    LOGGER.log_message(str(args), label="params")
     
     limit = limit or None
     try:
-        acc = HostAccount(*os.environ['ENSEMBL_ACCOUNT'].split())
+        acc = HostAccount(*ensembl_account.split())
     except KeyError:
         warnings.warn("ENSEMBL_ACCOUNT environment variable not set, defaulting to UK sever. Slow!!")
         acc = None
@@ -226,6 +230,7 @@ def main(ctx, ref, species, release, outdir, coord_names, introns, method_clade_
         exit(-1)
     
     runlog_path = os.path.join(outdir, logfile_name)
+    
     if os.path.exists(runlog_path) and not force_overwrite:
         print "Log file (%s) already exists!" % runlog_path
         print "Use force_overwrite or provide logfile_name"
