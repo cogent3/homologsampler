@@ -207,11 +207,16 @@ def display_ensembl_alignment_table(compara):
 @click.pass_context
 def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, logfile_name, limit, show_available_species, test):
     """Command line tool for sampling homologous sequences from Ensembl."""
-    if not any([species, show_available_species]):
+    if not any([show_align_methods, show_available_species]):
         msg = "%s\n\n--help to see all options\n" % ctx.get_usage()
         click.echo(msg)
         exit(-1)
-    
+    elif show_align_methods and not all([species, release]):
+        msg = ["The following arguments are required for show_align_methods:",
+               "--species", "--release"]
+        click.echo(click.style("\n".join(msg), fg="red"))
+        exit(-1)
+        
     try:
         acc = HostAccount(*ensembl_account.split())
     except KeyError:
