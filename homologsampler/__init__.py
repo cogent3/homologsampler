@@ -263,10 +263,16 @@ def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, intro
         click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
     
+    compara = Compara(species, Release=release, account=acc)
+    
+    if show_align_methods:
+        display_ensembl_alignment_table(compara)
+    
     if not ref in species:
         print "The reference species not in species names"
         exit(-1)
     
+    ref_genome = Genome(ref, Release=release, account=acc)
     runlog_path = os.path.join(outdir, logfile_name)
     
     if os.path.exists(runlog_path) and not force_overwrite:
@@ -275,12 +281,6 @@ def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, intro
         exit(-1)
     
     LOGGER.log_file_path = runlog_path
-    
-    compara = Compara(species, Release=release, account=acc)
-    ref_genome = Genome(ref, Release=release, account=acc)
-    
-    if show_align_methods:
-        display_ensembl_alignment_table(compara)
     
     if coord_names:
         chroms = load_coord_names(coord_names)
