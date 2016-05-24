@@ -8,7 +8,8 @@ from cogent.db.ensembl import Compara, Genome, HostAccount, Species
 
 from scitrack import CachingLogger
 
-from homologsampler.util import missing_species_names, get_chrom_names, load_coord_names
+from homologsampler.util import (missing_species_names, get_chrom_names,
+                        load_coord_names, display_available_dbs)
 
 __author__ = "Gavin Huttley"
 __copyright__ = "Copyright 2014, Gavin Huttley"
@@ -185,10 +186,10 @@ def display_ensembl_alignment_table(compara):
     exit(0)
 
 @click.command()
-@click.option('--ref', required=True, help='Reference species.')
-@click.option('--species', required=True, help='Comma separated list of species names.')
-@click.option('--release', required=True, help='Ensembl release.')
-@click.option('--outdir', required=True, type=click.Path(resolve_path=True), help='Path to write files.')
+@click.option('--ref', help='Reference species.')
+@click.option('--species', help='Comma separated list of species names.')
+@click.option('--release', help='Ensembl release.')
+@click.option('--outdir', type=click.Path(resolve_path=True), help='Path to write files.') ##
 @click.option('--ensembl_account', envvar='ENSEMBL_ACCOUNT',
     help="shell variable with MySQL account details, e.g. export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
 @click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
@@ -199,12 +200,30 @@ def display_ensembl_alignment_table(compara):
 @click.option('--mask_features', is_flag=True, help="Intron masks repeats, exons, CpG islands.")
 @click.option('--force_overwrite', is_flag=True, help="Overwrite existing files.")
 @click.option('--show_align_methods', is_flag=True, help="Shows the align methods and exits.")
+@click.option('--show_available_species', is_flag=True, help="Shows the available db's at ENSEMBL_ACCOUNT.")
 @click.option('--limit', type=int, default=0, help="Limit to this number of genes.")
 @click.option('--logfile_name', default="one2one.log", help="Name for log file, written to outdir.")
 @click.option('--test', is_flag=True)
 @click.pass_context
-def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, logfile_name, limit, test):
+def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, logfile_name, limit, show_available_species, test):
     """Command line tool for sampling homologous sequences from Ensembl."""
+    if not any([species, show_available_species]):
+        msg = "%s\n\n--help to see all options\n" % ctx.get_usage()
+        click.echo(msg)
+        exit(-1)
+    
+    try:
+        acc = HostAccount(*ensembl_account.split())
+    except KeyError:
+        warnings.warn("ENSEMBL_ACCOUNT environment variable not set, defaulting to UK sever. Slow!!")
+        acc = None
+    
+    if show_available_species:
+        available = display_available_dbs(acc)
+        print
+        print available
+        exit(0)
+        
     
     args = locals()
     args.pop("ctx")
@@ -212,23 +231,31 @@ def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, intro
     LOGGER.log_message(str(args), label="params")
     
     limit = limit or None
-    try:
-        acc = HostAccount(*ensembl_account.split())
-    except KeyError:
-        warnings.warn("ENSEMBL_ACCOUNT environment variable not set, defaulting to UK sever. Slow!!")
-        acc = None
-    
     if introns and not method_clade_id:
         print "Must specify the method_clade_id in order to export introns"
+        exit(-1)
+    
+    if not all([species, release]):
+        msg = ["The following arguments are required:",
+               "--species", "--release"]
+        if not show_align_methods and not outdir:
+            msg.append("--outdir")
+        
+        msg.append("")
+        msg.append("Use --help to see options")
+        
+        click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
     
     species = species.split(',')
     species_missing = missing_species_names(species)
     if species_missing:
-        print "The following species names don't match an Ensembl record. Check spelling!"
-        print species_missing
-        print "\nAvailable species are:"
-        print Species
+        msg = ["The following species names don't match an Ensembl record. Check spelling!",
+              str(species_missing),
+              "\nAvailable species are at this server are:",
+              str(display_available_dbs(acc))]
+        
+        click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
     
     if not ref in species:
