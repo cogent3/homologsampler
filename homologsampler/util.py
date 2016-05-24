@@ -20,7 +20,7 @@ def display_available_dbs(account):
     for db_name in db_list:
         species_name = db_name.Species
         if species_name:
-            common_name = Species.getCommonName(db_name.Species)
+            common_name = Species.getCommonName(db_name.Species, level='ignore')
     
         if 'compara' in db_name.Name:
             species_name = common_name = '-'
