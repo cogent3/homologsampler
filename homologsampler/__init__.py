@@ -207,7 +207,7 @@ def display_ensembl_alignment_table(compara):
 @click.pass_context
 def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, logfile_name, limit, show_available_species, test):
     """Command line tool for sampling homologous sequences from Ensembl."""
-    if not any([show_align_methods, show_available_species]):
+    if not any([show_align_methods, show_available_species, ref, species]):
         msg = "%s\n\n--help to see all options\n" % ctx.get_usage()
         click.echo(msg)
         exit(-1)
