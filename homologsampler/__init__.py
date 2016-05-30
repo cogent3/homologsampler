@@ -194,7 +194,7 @@ def display_ensembl_alignment_table(compara):
     help="shell variable with MySQL account details, e.g. export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
 @click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
                 help='File containing chrom/coord names to restrict sampling to, one per line.')
-@click.option('--introns', is_flag=True, help="Sample syntenic alignments of introns.")
+@click.option('--introns', is_flag=True, help="Sample syntenic alignments of introns, requires --method_clade_id.")
 @click.option('--method_clade_id',
     help="The align method ID to use, required if sampling introns.")
 @click.option('--mask_features', is_flag=True, help="Intron masks repeats, exons, CpG islands.")
@@ -207,7 +207,19 @@ def display_ensembl_alignment_table(compara):
 @click.pass_context
 def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, introns, method_clade_id, mask_features, force_overwrite, show_align_methods, logfile_name, limit, show_available_species, test):
     """Command line tool for sampling homologous sequences from Ensembl."""
+    # There are XX possible uses
+    # 1 - just the command name, in which case indicate they need to display help
+    # 2 - list available databases at a server
+    #   - they need the --show_available_species arg only
+    # 3 - list --show_align_methods
+    #   - they also need the species and release
+    # 4 - query for orthologs
+    #   - introns
+    #       - need method_clade_id, ref species, species, release, outdir
+    #   - else
+    #       - need ref species, species, release, outdir
     if not any([show_align_methods, show_available_species, ref, species]):
+        # just the command name, indicate they need to display help
         msg = "%s\n\n--help to see all options\n" % ctx.get_usage()
         click.echo(msg)
         exit(-1)
@@ -219,9 +231,10 @@ def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, intro
         
     try:
         acc = HostAccount(*ensembl_account.split())
-    except KeyError:
+    except (KeyError, AttributeError):
         warnings.warn("ENSEMBL_ACCOUNT environment variable not set, defaulting to UK sever. Slow!!")
         acc = None
+        pass
     
     if show_available_species:
         available = display_available_dbs(acc)
@@ -232,23 +245,25 @@ def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, intro
     
     args = locals()
     args.pop("ctx")
-    args.update(vars(ctx))
+    args.update(ctx.params)
     LOGGER.log_message(str(args), label="params")
     
     limit = limit or None
-    if introns and not method_clade_id:
-        print "Must specify the method_clade_id in order to export introns"
-        exit(-1)
-    
-    if not all([species, release]):
-        msg = ["The following arguments are required:",
-               "--species", "--release"]
-        if not show_align_methods and not outdir:
-            msg.append("--outdir")
+    if not show_align_methods and not all([species, release, outdir]):
+        msg = ["You are missing an argument. Either",
+               "--outdir (for exporting orthologs)",
+               "OR",
+               "--show_align_methods (if you intend exporting introns)"]
         
         msg.append("")
         msg.append("Use --help to see options")
         
+        click.echo(click.style("\n".join(msg), fg="red"))
+        exit(-1)
+    
+    if introns and not method_clade_id:
+        msg = ["Must specify the method_clade_id in order to export introns.",
+               "Use the --show_align_methods argument to see the options"]
         click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
     
@@ -276,8 +291,9 @@ def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, intro
     runlog_path = os.path.join(outdir, logfile_name)
     
     if os.path.exists(runlog_path) and not force_overwrite:
-        print "Log file (%s) already exists!" % runlog_path
-        print "Use force_overwrite or provide logfile_name"
+        msg = ["Log file (%s) already exists!" % runlog_path,
+               "Use force_overwrite or provide logfile_name"]
+        click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
     
     LOGGER.log_file_path = runlog_path
@@ -299,7 +315,7 @@ def main(ctx, ref, species, release, outdir, ensembl_account, coord_names, intro
     
     ref_genes = []
     with click.progressbar(all_genes,
-        label="Finding genes") as genes:
+        label="Finding %s genes" % ref) as genes:
         for index, g in enumerate(genes):
             if limit is not None and index >= limit:
                 break
