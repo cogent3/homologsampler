@@ -6,7 +6,7 @@ __author__ = "Gavin Huttley"
 __copyright__ = "Copyright 2014, Gavin Huttley"
 __credits__ = ["Gavin Huttley"]
 __license__ = "GPL"
-__version__ = "0.1"
+__version__ = "0.11"
 __maintainer__ = "Gavin Huttley"
 __email__ = "Gavin.Huttley@anu.edu.au"
 __status__ = "Development"
@@ -49,7 +49,7 @@ setup(
           ],
     dependency_links=['git+https://github.com/pycogent/pycogent.git#egg=cogent-1.5.3-dev'],
     entry_points={
-            'console_scripts': ['one2one=homologsampler.__init__:main',
+            'console_scripts': ['homolog_sampler=homologsampler.__init__:cli',
                             ],
         },
     url="https://bitbucket.org/gavin.huttley/homologsampler",

@@ -7,7 +7,7 @@ __author__ = "Gavin Huttley"
 __copyright__ = "Copyright 2014, Gavin Huttley"
 __credits__ = ["Gavin Huttley"]
 __license__ = "GPL"
-__version__ = "0.1"
+__version__ = "0.11"
 __maintainer__ = "Gavin Huttley"
 __email__ = "Gavin.Huttley@anu.edu.au"
 __status__ = "Development"
@@ -30,6 +30,11 @@ def display_available_dbs(account):
     table = table.sorted(["Release", "Db Name"])
     table.Legend = "Values of 'None' indicate cogent does not have a value for that database name."
     return table
+
+def species_names_from_csv(species):
+    """returns species names"""
+    species = [s.strip() for s in species.split(',')]
+    return species
 
 def missing_species_names(names):
     '''returns a Table of missing species names, or None'''
