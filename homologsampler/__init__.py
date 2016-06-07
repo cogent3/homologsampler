@@ -196,14 +196,14 @@ def _get_account(ensembl_account):
     
     return acc
 
-def _get_ref_genes(ref_genome, biotype='protein_coding'):
+def _get_ref_genes(ref_genome, chroms, limit, biotype='protein_coding'):
     """returns stable ID's for genes from reference genome"""
     print "Sampling %s genes" % ref_genome
     all_genes = ref_genome.getGenesMatching(BioType=biotype)
     
     ref_genes = []
     with click.progressbar(all_genes,
-        label="Finding %s genes" % ref) as genes:
+        label="Finding genes") as genes:
         for index, g in enumerate(genes):
             if limit is not None and index >= limit:
                 break
@@ -286,7 +286,7 @@ def show_align_methods(ctx, species, release):
 @click.option('--limit', type=int, default=0, help="Limit to this number of genes.")
 @click.option('--logfile_name', default="one2one.log", help="Name for log file, written to outdir.")
 @pass_config
-def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, introns, method_clade_id, mask_features, logfile_name, limit):
+def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not_strict, introns, method_clade_id, mask_features, logfile_name, limit):
     """Command line tool for sampling homologous sequences from Ensembl."""
     if not any([ref, ref_genes_file]):
         # just the command name, indicate they need to display help
@@ -345,9 +345,9 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, int
         os.makedirs(outdir)
         print "Created", outdir
     
-    if ref and not ref_genes:
+    if ref and not ref_genes_file:
         ref_genome = Genome(ref, Release=release, account=ctx.ensembl_account)
-        ref_genes = _get_ref_genes(ref_genome)
+        ref_genes = _get_ref_genes(ref_genome, chroms, limit)
     else:
         ref_genes = [l.strip() for l in ref_genes_file if l.strip()]
     
