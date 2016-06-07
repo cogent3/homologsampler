@@ -15,4 +15,4 @@ build
 *htmlcov*
 *.idea
 *.coverage
-*trackcomp.egg-info*
+*egg-info*
