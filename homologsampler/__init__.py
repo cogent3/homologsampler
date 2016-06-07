@@ -22,7 +22,7 @@ __status__ = "Development"
 
 LOGGER = CachingLogger(create_dir=True)
 
-def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
+def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwrite):
     """writes one-to-one orthologs of protein coding genes to outpath"""
     
     species = Counter(compara.Species)
@@ -38,7 +38,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
             syntenic = compara.getRelatedGenes(StableId=gene,
                             Relationship='ortholog_one2one')
         
-            if syntenic is None or Counter(syntenic.getSpeciesSet()) != species:
+            if not not_strict and (syntenic is None or Counter(syntenic.getSpeciesSet()) != species):
                 # skipping, not all species had a 1to1 ortholog for this gene
                 continue
             
@@ -48,6 +48,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
                 cds = m.CanonicalTranscript.Cds.withoutTerminalStopCodon(allow_partial=True)
                 cds.Name = name
                 seqs.append([name, cds])
+            
             seqs = LoadSeqs(data=seqs, aligned=False)
             with gzip.open(outfile_name, 'w') as outfile:
                 outfile.write(seqs.toFasta() + '\n')
@@ -274,6 +275,9 @@ def show_align_methods(ctx, species, release):
          'One identifier per line.')
 @click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
                 help='File containing chrom/coord names to restrict sampling to, one per line.')
+@click.option('--not_strict', is_flag=True,
+    help="Genes with an ortholog in any species are exported. "
+         "Default is all species must have a ortholog.")
 @click.option('--introns', is_flag=True, help="Sample syntenic alignments of introns, requires --method_clade_id.")
 @click.option('--method_clade_id',
     help="The value of method_link_species_set_id to use (see ) "
@@ -349,7 +353,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, int
     
     if not introns:
         print "Getting orthologs"
-        get_one2one_orthologs(compara, ref_genes, outdir, ctx.force_overwrite)
+        get_one2one_orthologs(compara, ref_genes, outdir, not_strict, ctx.force_overwrite)
     else:
         print "Getting orthologous introns"
         get_syntenic_alignments_introns(compara, ref_genes, outdir, method_clade_id,
