@@ -30,12 +30,12 @@ def get_one2one_orthologs(compara, ref_genes, outpath, force_overwrite):
     with click.progressbar(ref_genes,
         label="Finding 1to1 orthologs") as ids:
         for gene in ids:
-            outfile_name = os.path.join(outpath, "%s.fa.gz" % gene.StableId)
+            outfile_name = os.path.join(outpath, "%s.fa.gz" % gene)
             if os.path.exists(outfile_name) and not force_overwrite:
                 written += 1
                 continue
             
-            syntenic = compara.getRelatedGenes(StableId=gene.StableId,
+            syntenic = compara.getRelatedGenes(StableId=gene,
                             Relationship='ortholog_one2one')
         
             if syntenic is None or Counter(syntenic.getSpeciesSet()) != species:
@@ -195,6 +195,23 @@ def _get_account(ensembl_account):
     
     return acc
 
+def _get_ref_genes(ref_genome, biotype='protein_coding'):
+    """returns stable ID's for genes from reference genome"""
+    print "Sampling %s genes" % ref_genome
+    all_genes = ref_genome.getGenesMatching(BioType=biotype)
+    
+    ref_genes = []
+    with click.progressbar(all_genes,
+        label="Finding %s genes" % ref) as genes:
+        for index, g in enumerate(genes):
+            if limit is not None and index >= limit:
+                break
+            if chroms and g.Location.CoordName not in chroms:
+                continue
+            
+            ref_genes.append(g.StableId)
+    return ref_genes
+
 class Config(object):
     def __init__(self):
         super(Config, self).__init__()
@@ -206,7 +223,7 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.group()
 @click.option('--ensembl_account', envvar='ENSEMBL_ACCOUNT',
     help="shell variable with MySQL account details, e.g. export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
-@click.option('--force_overwrite', is_flag=True, help="Overwrite existing files.")
+@click.option('-F', '--force_overwrite', is_flag=True, help="Overwrite existing files.")
 @click.option('--test', is_flag=True)
 @pass_config
 def cli(ctx, ensembl_account, force_overwrite, test):
@@ -248,10 +265,13 @@ def show_align_methods(ctx, species, release):
     
 
 @cli.command()
-@click.option('--ref', required=True, help='Reference species.')
 @click.option('--species', required=True, help='Comma separated list of species names.')
 @click.option('--release', required=True, help='Ensembl release.')
 @click.option('--outdir', required=True, type=click.Path(resolve_path=True), help='Path to write files.') ##
+@click.option('--ref', default=None, help='Reference species.')
+@click.option('--ref_genes_file', default=None, type=click.File('rb'),
+    help='File containing Ensembl stable identifiers for genes of interest. '
+         'One identifier per line.')
 @click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
                 help='File containing chrom/coord names to restrict sampling to, one per line.')
 @click.option('--introns', is_flag=True, help="Sample syntenic alignments of introns, requires --method_clade_id.")
@@ -262,15 +282,9 @@ def show_align_methods(ctx, species, release):
 @click.option('--limit', type=int, default=0, help="Limit to this number of genes.")
 @click.option('--logfile_name', default="one2one.log", help="Name for log file, written to outdir.")
 @pass_config
-def one2one(ctx, ref, species, release, outdir, coord_names, introns, method_clade_id, mask_features, logfile_name, limit):
+def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, introns, method_clade_id, mask_features, logfile_name, limit):
     """Command line tool for sampling homologous sequences from Ensembl."""
-    # There are XX possible uses
-    # 4 - query for orthologs
-    #   - introns
-    #       - need method_clade_id, ref species, species, release, outdir
-    #   - else
-    #       - need ref species, species, release, outdir
-    if not any([show_align_methods, show_available_species, ref, species]):
+    if not any([ref, ref_genes_file]):
         # just the command name, indicate they need to display help
         msg = "%s\n\n--help to see all options\n" % ctx.get_usage()
         click.echo(msg)
@@ -301,13 +315,11 @@ def one2one(ctx, ref, species, release, outdir, coord_names, introns, method_cla
         click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
     
-    if not ref in species:
+    if ref and ref not in species:
         print "The reference species not in species names"
         exit(-1)
     
     compara = Compara(species, Release=release, account=ctx.ensembl_account)
-    
-    ref_genome = Genome(ref, Release=release, account=ctx.ensembl_account)
     runlog_path = os.path.join(outdir, logfile_name)
     
     if os.path.exists(runlog_path) and not ctx.force_overwrite:
@@ -318,31 +330,22 @@ def one2one(ctx, ref, species, release, outdir, coord_names, introns, method_cla
     
     LOGGER.log_file_path = runlog_path
     
+    chroms = None
     if coord_names:
         chroms = load_coord_names(coord_names)
         LOGGER.input_file(coord_names)
-    else:
+    elif coord_names and ref:
         chroms = get_chrom_names(ref, compara)
-    
-    chroms = chroms or None
     
     if not os.path.exists(outdir) and not test:
         os.makedirs(outdir)
         print "Created", outdir
     
-    print "Sampling %s genes" % ref_genome
-    all_genes = ref_genome.getGenesMatching(BioType='protein_coding')
-    
-    ref_genes = []
-    with click.progressbar(all_genes,
-        label="Finding %s genes" % ref) as genes:
-        for index, g in enumerate(genes):
-            if limit is not None and index >= limit:
-                break
-            if chroms and g.Location.CoordName not in chroms:
-                continue
-            
-            ref_genes.append(g)
+    if ref and not ref_genes:
+        ref_genome = Genome(ref, Release=release, account=ctx.ensembl_account)
+        ref_genes = _get_ref_genes(ref_genome)
+    else:
+        ref_genes = [l.strip() for l in ref_genes_file if l.strip()]
     
     if not introns:
         print "Getting orthologs"
