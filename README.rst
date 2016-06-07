@@ -17,13 +17,13 @@ Because we rely on PyCogent, whose install depends on numpy in a way that standa
 Install numpy
 
 ::
-    
+
     $ pip install numpy --upgrade
 
 Then install HomologSampler directly from the bitbucket, specifying to follow dependency links
 
 ::
-    
+
     $ pip install --process-dependency-links hg+ssh://hg@bitbucket.org/gavin.huttley/homologsampler
 
 .. _pip: https://pip.pypa.io/en/stable/installing/
@@ -35,29 +35,60 @@ Basic usage is
 
 ::
 
-    $ one2one --help
-    Usage: one2one [OPTIONS]
-
-      Command line tool for sampling homologous sequences from Ensembl.
+    $ homolog_sampler
+    Usage: homolog_sampler [OPTIONS] COMMAND [ARGS]...
 
     Options:
-      --ref TEXT                Reference species.
-      --species TEXT            Comma separated list of species names.
-      --release TEXT            Ensembl release.
-      --outdir PATH             Path to write files.
-      --ensembl_account TEXT    shell variable with MySQL account details, e.g.
-                                export ENSEMBL_ACCOUNT='myhost.com jill
-                                jills_pass'
-      --coord_names PATH        File containing chrom/coord names to restrict
-                                sampling to, one per line.
-      --introns                 Sample syntenic alignments of introns.
-      --method_clade_id TEXT    The align method ID to use, required if sampling
-                                introns.
-      --mask_features           Intron masks repeats, exons, CpG islands.
-      --force_overwrite         Overwrite existing files.
-      --show_align_methods      Shows the align methods and exits.
-      --show_available_species  Shows the available db's at ENSEMBL_ACCOUNT.
-      --limit INTEGER           Limit to this number of genes.
-      --logfile_name TEXT       Name for log file, written to outdir.
+      --ensembl_account TEXT  shell variable with MySQL account details, e.g.
+                              export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'
+      -F, --force_overwrite   Overwrite existing files.
       --test
-      --help                    Show this message and exit.
+      --help                  Show this message and exit.
+
+    Commands:
+      one2one                 Command line tool for sampling homologous...
+      show_align_methods      Shows the align methods in release...
+      show_available_species  shows available species and Ensembl release...
+
+To show available species
+=========================
+
+::
+
+    $ homolog_sampler show_available_species
+    Species available at: username:passwd@your.mysql.server
+    =================================================================================================
+    Release                                   Db Name                     Species         Common Name
+    -------------------------------------------------------------------------------------------------
+         20              ashbya_gossypii_core_20_73_1                        None                None
+         20         aspergillus_clavatus_core_20_73_1        Aspergillus clavatus          A.clavatus
+         20           aspergillus_flavus_core_20_73_1          Aspergillus flavus            A.flavus
+         20        aspergillus_fumigatus_core_20_73_2       Aspergillus fumigatus         A.fumigatus...
+
+To sample orthologs CDS
+=======================
+
+::
+
+    $ homolog_sampler one2one --release 81 --ref human --species human,mouse,opossum --outdir sampled_cds
+
+This command will write CDSs sequences to the directory ``sampled_cds`` as gzip compressed fasta files with the file prefix as the human Ensembl gene stable identifier (e.g. ``ENSG00000012048.fa.gz``).
+
+To sample syntenic introns
+==========================
+
+We first need to know the Ensembl alignment method identifier. We get this as follows ::
+
+    $ homolog_sampler show_align_methods --species human,mouse,opossum --release=81
+    Align Methods/Clades
+    ======================================================================================================
+    method_link_species_set_id  method_link_id  species_set_id  align_method                   align_clade
+    ------------------------------------------------------------------------------------------------------
+                           788              10           36176         PECAN  23 amniota vertebrates Pecan
+    ------------------------------------------------------------------------------------------------------
+    Assign the desired value from method_link_species_set_id to the method_clade_id argument
+
+We then use the ``one2one`` subcommand ::
+
+    $ homolog_sampler one2one --release 81 --ref human --species human,mouse,opossum --outdir sampled_intron --introns --method_clade_id 788
+
