@@ -109,7 +109,11 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
     written = 0
     with click.progressbar(ref_genes,
         label="Finding 1to1 intron orthologs") as ids:
-        for gene in ids:
+        for gene_id in ids:
+            gene = _get_gene_from_compara(compara, gene_id)
+            if not gene:
+                continue
+            
             if gene.CanonicalTranscript.Introns is None:
                 continue
             
@@ -196,6 +200,14 @@ def _get_account(ensembl_account):
     
     return acc
 
+def _get_gene_from_compara(compara, stable_id):
+    """returns gene instance from a compara db"""
+    for sp in compara._genomes.values():
+        gene = sp.getGeneByStableId(stable_id)
+        if gene:
+            break
+    return gene
+
 def _get_ref_genes(ref_genome, chroms, limit, biotype='protein_coding'):
     """returns stable ID's for genes from reference genome"""
     print "Sampling %s genes" % ref_genome
@@ -237,7 +249,7 @@ def cli(ctx, ensembl_account, force_overwrite, test):
 def show_available_species(ctx):
     """shows available species and Ensembl release at ENSEMBL_ACCOUNT"""
     available = display_available_dbs(ctx.ensembl_account)
-    print
+    available.Title = "Species available at: %s" % str(ctx.ensembl_account)
     print available
     sys.exit(0)
     
