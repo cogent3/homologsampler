@@ -8,8 +8,6 @@ HomologSampler has one command line tool ``homolog_sampler``. At present, this t
 
 Increasing the number of biotypes and the homology relationships will be done at a later date.
 
-.. _Ensembl: http://www.ensembl.org
-
 ************
 Installation
 ************
@@ -27,9 +25,6 @@ Then install HomologSampler directly from the bitbucket repo, specifying to foll
 ::
 
     $ pip install --process-dependency-links hg+ssh://hg@bitbucket.org/gavin.huttley/homologsampler
-
-.. _pip: https://pip.pypa.io/en/stable/installing/
-
 
 **************
 Main help page
@@ -96,3 +91,5 @@ We then use the ``one2one`` subcommand ::
 
     $ homolog_sampler one2one --release 81 --ref human --species human,mouse,opossum --outdir sampled_intron --introns --method_clade_id 788
 
+.. _pip: https://pip.pypa.io/en/stable/installing/
+.. _Ensembl: http://www.ensembl.org
