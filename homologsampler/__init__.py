@@ -22,7 +22,7 @@ __status__ = "Development"
 
 LOGGER = CachingLogger(create_dir=True)
 
-def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwrite):
+def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwrite, test):
     """writes one-to-one orthologs of protein coding genes to outpath"""
     
     species = Counter(compara.Species)
@@ -50,11 +50,16 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
                 seqs.append([name, cds])
             
             seqs = LoadSeqs(data=seqs, aligned=False)
-            with gzip.open(outfile_name, 'w') as outfile:
-                outfile.write(seqs.toFasta() + '\n')
+            if test:
+                print
+                print gene
+                print seqs.toFasta()
+            else:
+                with gzip.open(outfile_name, 'w') as outfile:
+                    outfile.write(seqs.toFasta() + '\n')
+                LOGGER.output_file(outfile_name)
             
             written += 1
-            LOGGER.output_file(outfile_name)
         
     print "Wrote %d files to %s" % (written, outpath)
     return
@@ -100,7 +105,7 @@ def with_masked_features(aln, reverse=False):
     return aln
 
 def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id,
-                mask_features, outdir, force_overwrite):
+                mask_features, outdir, force_overwrite, test):
     """writes Ensembl `method` syntenic alignments to ref_genes"""
     species = Counter(compara.Species)
     common_names = map(Species.getCommonName, compara.Species)
@@ -172,11 +177,14 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 
                 align += (filler + aln)
             
-            with gzip.open(outfile_name, 'w') as outfile:
-                outfile.write(align.toFasta())
+            if test:
+                print align
+            else:
+                with gzip.open(outfile_name, 'w') as outfile:
+                    outfile.write(align.toFasta())
+                LOGGER.output_file(outfile_name)
             
             written += 1
-            LOGGER.output_file(outfile_name)
         
     print "Wrote %d files to %s" % (written, outpath)
     return
@@ -237,7 +245,9 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.option('--ensembl_account', envvar='ENSEMBL_ACCOUNT',
     help="shell variable with MySQL account details, e.g. export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
 @click.option('-F', '--force_overwrite', is_flag=True, help="Overwrite existing files.")
-@click.option('--test', is_flag=True)
+@click.option('--test', type=int, default=2,
+    help="limit to # queries (default is 2), does not write files, prints seqs and exits.")
+@click.version_option(version=__version__)
 @pass_config
 def cli(ctx, ensembl_account, force_overwrite, test):
     ctx.ensembl_account = _get_account(ensembl_account)
@@ -313,7 +323,11 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
     args['ensembl_account'] = str(args['ensembl_account'])
     LOGGER.log_message(str(args), label="params")
     
-    limit = limit or None
+    if ctx.test:
+        limit = ctx.test
+    else:
+        limit = limit or None
+    
     if (introns and not method_clade_id) or (mask_features and not introns):
         msg = ["Must specify the introns and method_clade_id in order to export introns.",
                "Use show_align_methods to see the options"]
@@ -326,7 +340,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
         msg = ["The following species names don't match an Ensembl record. Check spelling!",
               str(species_missing),
               "\nAvailable species are at this server are:",
-              str(display_available_dbs(acc))]
+              str(display_available_dbs(ctx.ensembl_account))]
         
         click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
@@ -344,7 +358,8 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
         click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
     
-    LOGGER.log_file_path = runlog_path
+    if not ctx.test:
+        LOGGER.log_file_path = runlog_path
     
     chroms = None
     if coord_names:
@@ -353,7 +368,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
     elif coord_names and ref:
         chroms = get_chrom_names(ref, compara)
     
-    if not os.path.exists(outdir) and not test:
+    if not os.path.exists(outdir) and not ctx.test:
         os.makedirs(outdir)
         print "Created", outdir
     
@@ -365,11 +380,11 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
     
     if not introns:
         print "Getting orthologs"
-        get_one2one_orthologs(compara, ref_genes, outdir, not_strict, ctx.force_overwrite)
+        get_one2one_orthologs(compara, ref_genes, outdir, not_strict, ctx.force_overwrite, ctx.test)
     else:
         print "Getting orthologous introns"
         get_syntenic_alignments_introns(compara, ref_genes, outdir, method_clade_id,
-                mask_features, outdir, ctx.force_overwrite)
+                mask_features, outdir, ctx.force_overwrite, ctx.test)
     
 
 if __name__ == "__main__":

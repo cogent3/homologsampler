@@ -2,11 +2,13 @@
 HomologSampler
 ##############
 
-This is a command line tool for sampling related sequences from Ensembl. It requires PyCogent, Numpy, and a currently unpublished tool SciTrack. The latter basically logs commands, file inputs and outputs, to assist with reproducible research.
+This is a command line tool for sampling related sequences from Ensembl. It requires PyCogent, Numpy, SQLAlchemy, PyMysql, Click and SciTrack. The latter basically logs commands, file inputs and outputs, to assist with reproducible research.
 
-HomologSampler has one command line tool ``one2one``. At present, this tool is limited to sampling one-to-one orthologs from protein coding genes. It can either write out the protein coding sequences from the canonical CDS, or it can write out the Ensembl multiple sequence alignment of the entire gene with exons masked.
+HomologSampler has one command line tool ``homolog_sampler``. At present, this tool provides capabilities to support sampling one-to-one orthologs from protein coding genes stored in an Ensembl_ MySQl database. It can either write out the protein coding sequences from the canonical CDS, or it can write out the Ensembl multiple sequence alignment of the entire gene with annotated features masked.
 
-Increasing the number of biotypes and the homology relationships will be done if requested. But for now, it serves my purpose.
+Increasing the number of biotypes and the homology relationships will be done if requested.
+
+.. _Ensembl: http://www.ensembl.org
 
 ************
 Installation
@@ -14,13 +16,13 @@ Installation
 
 Because we rely on PyCogent, whose install depends on numpy in a way that standard package installers don't cope with, the following is the required order of statements. (Note, I assume you already have pip_ installed.)
 
-Install numpy
+Install numpy and (because the HomologSampler is currently not up on PyPi) the MySQL related dependencies
 
 ::
 
-    $ pip install numpy --upgrade
+    $ pip install numpy sqlalchemy pymysql
 
-Then install HomologSampler directly from the bitbucket, specifying to follow dependency links
+Then install HomologSampler directly from the bitbucket repo, specifying to follow dependency links
 
 ::
 
@@ -30,19 +32,21 @@ Then install HomologSampler directly from the bitbucket, specifying to follow de
 
 
 **************
-Basic usage is
+Main help page
 **************
 
 ::
 
-    $ homolog_sampler
+    $ homolog_sampler 
     Usage: homolog_sampler [OPTIONS] COMMAND [ARGS]...
 
     Options:
       --ensembl_account TEXT  shell variable with MySQL account details, e.g.
                               export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'
       -F, --force_overwrite   Overwrite existing files.
-      --test
+      --test INTEGER          limit to # queries (default is 2), does not write
+                              files, prints seqs and exits.
+      --version               Show the version and exit.
       --help                  Show this message and exit.
 
     Commands:
