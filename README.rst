@@ -6,7 +6,7 @@ This is a command line tool for sampling related sequences from Ensembl. It requ
 
 HomologSampler has one command line tool ``homolog_sampler``. At present, this tool provides capabilities to support sampling one-to-one orthologs from protein coding genes stored in an Ensembl_ MySQl database. It can either write out the protein coding sequences from the canonical CDS, or it can write out the Ensembl multiple sequence alignment of the entire gene with annotated features masked.
 
-Increasing the number of biotypes and the homology relationships will be done if requested.
+Increasing the number of biotypes and the homology relationships will be done at a later date.
 
 .. _Ensembl: http://www.ensembl.org
 
