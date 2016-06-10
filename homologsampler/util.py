@@ -12,10 +12,10 @@ __maintainer__ = "Gavin Huttley"
 __email__ = "Gavin.Huttley@anu.edu.au"
 __status__ = "Development"
 
-def display_available_dbs(account):
+def display_available_dbs(account, release=None):
     """displays the available Ensembl databases at the nominated host"""
-    db_list = get_db_name(account=account, db_type='core')
-    db_list += get_db_name(account=account, db_type='compara')
+    db_list = get_db_name(account=account, db_type='core', release=release)
+    db_list += get_db_name(account=account, db_type='compara', release=release)
     rows = []
     for db_name in db_list:
         species_name = db_name.Species

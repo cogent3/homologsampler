@@ -255,10 +255,11 @@ def cli(ctx, ensembl_account, force_overwrite, test):
     ctx.test = test
 
 @cli.command()
+@click.option('--release', help='Ensembl release.')
 @pass_config
-def show_available_species(ctx):
+def show_available_species(ctx, release):
     """shows available species and Ensembl release at ENSEMBL_ACCOUNT"""
-    available = display_available_dbs(ctx.ensembl_account)
+    available = display_available_dbs(ctx.ensembl_account, release)
     available.Title = "Species available at: %s" % str(ctx.ensembl_account)
     print available
     sys.exit(0)
