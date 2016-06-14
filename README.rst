@@ -14,11 +14,11 @@ Installation
 
 Because we rely on PyCogent, whose install depends on numpy in a way that standard package installers don't cope with, the following is the required order of statements. (Note, I assume you already have pip_ installed.)
 
-Install numpy and (because the HomologSampler is currently not up on PyPi) the MySQL related dependencies
+Install numpy and (because the HomologSampler is currently not up on PyPi) mercurial and the MySQL related dependencies
 
 ::
 
-    $ pip install numpy sqlalchemy pymysql
+    $ pip install numpy mercurial sqlalchemy pymysql
 
 Then install HomologSampler directly from the bitbucket repo, specifying to follow dependency links
 
