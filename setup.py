@@ -43,11 +43,10 @@ setup(
             ],
     packages=['homologsampler'],
     install_requires=[
-              'cogent==1.5.3-dev',
+              'cogent',
               'scitrack',
               'click'
           ],
-    dependency_links=['git+https://github.com/pycogent/pycogent.git#egg=cogent-1.5.3-dev'],
     entry_points={
             'console_scripts': ['homolog_sampler=homologsampler.__init__:cli',
                             ],
