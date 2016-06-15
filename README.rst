@@ -24,7 +24,7 @@ Then install HomologSampler directly from the bitbucket repo, specifying to foll
 
 ::
 
-    $ pip install --process-dependency-links hg+ssh://hg@bitbucket.org/gavin.huttley/homologsampler
+    $ pip install hg+ssh://hg@bitbucket.org/gavin.huttley/homologsampler
 
 **************
 Main help page
