@@ -60,8 +60,13 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
                 LOGGER.output_file(outfile_name)
             
             written += 1
-        
-    print "Wrote %d files to %s" % (written, outpath)
+    if test:
+        msg = "Would have written %d files to %s" % (written, outpath)
+    else:
+        msg = "Wrote %d files to %s" % (written, outpath)
+    
+    click.echo(msg)
+    
     return
 
 def get_latin_from_label(label):
@@ -245,8 +250,8 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.option('--ensembl_account', envvar='ENSEMBL_ACCOUNT',
     help="shell variable with MySQL account details, e.g. export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
 @click.option('-F', '--force_overwrite', is_flag=True, help="Overwrite existing files.")
-@click.option('--test', type=int, default=2,
-    help="limit to # queries (default is 2), does not write files, prints seqs and exits.")
+@click.option('--test', is_flag=True,
+    help="sets limit # queries to 2, does not write files, prints seqs and exits.")
 @click.version_option(version=__version__)
 @pass_config
 def cli(ctx, ensembl_account, force_overwrite, test):
@@ -325,7 +330,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
     LOGGER.log_message(str(args), label="params")
     
     if ctx.test:
-        limit = ctx.test
+        limit = 2
     else:
         limit = limit or None
     
