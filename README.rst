@@ -20,7 +20,7 @@ Install numpy and (because the HomologSampler is currently not up on PyPi) mercu
 
     $ pip install numpy mercurial sqlalchemy pymysql
 
-Then install HomologSampler directly from the bitbucket repo, specifying to follow dependency links
+Then install HomologSampler directly from the bitbucket repo
 
 ::
 
