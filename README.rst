@@ -57,7 +57,7 @@ To show available species
     $ homolog_sampler show_available_species
     Species available at: username:passwd@your.mysql.server
     =================================================================================================
-    Release                                   Db Name                     Species         Common Name
+    release                                   Db Name                     Species         Common Name
     -------------------------------------------------------------------------------------------------
          20              ashbya_gossypii_core_20_73_1                        None                None
          20         aspergillus_clavatus_core_20_73_1        Aspergillus clavatus          A.clavatus

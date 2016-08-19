@@ -1,12 +1,12 @@
 import sqlalchemy as sql
-from cogent import LoadTable
-from cogent.db.ensembl import Species
-from cogent.db.ensembl.host import get_db_name
+from cogent3 import LoadTable
+from ensembldb3 import Species
+from ensembldb3.host import get_db_name
 
 __author__ = "Gavin Huttley"
 __copyright__ = "Copyright 2014, Gavin Huttley"
 __credits__ = ["Gavin Huttley"]
-__license__ = "GPL"
+__license__ = "BSD"
 __version__ = "0.11"
 __maintainer__ = "Gavin Huttley"
 __email__ = "Gavin.Huttley@anu.edu.au"
@@ -18,17 +18,17 @@ def display_available_dbs(account, release=None):
     db_list += get_db_name(account=account, db_type='compara', release=release)
     rows = []
     for db_name in db_list:
-        species_name = db_name.Species
+        species_name = db_name.species
         if species_name:
-            common_name = Species.getCommonName(db_name.Species, level='ignore')
+            common_name = Species.get_common_name(db_name.species, level='ignore')
     
-        if 'compara' in db_name.Name:
+        if 'compara' in db_name.name:
             species_name = common_name = '-'
-        rows.append([db_name.Release, db_name.Name, species_name, common_name])
+        rows.append([db_name.release, db_name.name, species_name, common_name])
 
     table = LoadTable(header=["Release", "Db Name", "Species", "Common Name"], rows=rows, space=2)
     table = table.sorted(["Release", "Db Name"])
-    table.Legend = "Values of 'None' indicate cogent does not have a value for that database name."
+    table.legend = "Values of 'None' indicate cogent does not have a value for that database name."
     return table
 
 def species_names_from_csv(species):
@@ -40,7 +40,7 @@ def missing_species_names(names):
     '''returns a Table of missing species names, or None'''
     missing = []
     for name in names:
-        n = Species.getSpeciesName(name)
+        n = Species.get_species_name(name)
         if n == 'None':
             missing.append([name])
     
@@ -52,11 +52,11 @@ def missing_species_names(names):
 
 def get_chrom_names(ref_species, compara):
     """returns the list of chromosome names"""
-    genome_db = compara.ComparaDb.getTable("genome_db")
-    dnafrag = compara.ComparaDb.getTable("dnafrag")
+    genome_db = compara.ComparaDb.get_table("genome_db")
+    dnafrag = compara.ComparaDb.get_table("dnafrag")
     joined = genome_db.join(dnafrag, onclause=genome_db.c.genome_db_id==dnafrag.c.genome_db_id)
     condition = sql.and_(dnafrag.c.coord_system_name=="chromosome",
-                    genome_db.c.name==Species.getEnsemblDbPrefix(ref_species),
+                    genome_db.c.name==Species.get_ensembl_db_prefix(ref_species),
                     dnafrag.c.is_reference==1)
     query = sql.select([dnafrag.c.name], condition).select_from(joined)
     chroms = [r[0] for r in query.execute()]

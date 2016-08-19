@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 from setuptools import setup
-import sys, os, re, subprocess
+import sys
 
 __author__ = "Gavin Huttley"
-__copyright__ = "Copyright 2014, Gavin Huttley"
+__copyright__ = "Copyright 2016, Gavin Huttley"
 __credits__ = ["Gavin Huttley"]
-__license__ = "GPL"
+__license__ = "BSD"
 __version__ = "0.11"
 __maintainer__ = "Gavin Huttley"
 __email__ = "Gavin.Huttley@anu.edu.au"
@@ -36,14 +36,14 @@ setup(
     classifiers=[
             "Development Status :: 3 - Alpha",
             "Intended Audience :: Science/Research",
-            "License :: OSI Approved :: GNU General Public License (GPL)",
+            "License :: OSI Approved :: BSD",
             "Topic :: Scientific/Engineering :: Bio-Informatics",
             "Topic :: Software Development :: Libraries :: Python Modules",
             "Operating System :: OS Independent",
             ],
     packages=['homologsampler'],
     install_requires=[
-              'cogent',
+              # 'cogent',
               'scitrack',
               'click'
           ],

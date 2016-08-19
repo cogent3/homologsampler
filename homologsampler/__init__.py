@@ -3,8 +3,8 @@ from collections import Counter
 
 import click
 
-from cogent import LoadSeqs, DNA
-from cogent.db.ensembl import Compara, Genome, HostAccount, Species
+from cogent3 import LoadSeqs, DNA
+from ensembldb3 import Compara, Genome, HostAccount, Species
 
 from scitrack import CachingLogger
 
@@ -14,7 +14,7 @@ from homologsampler.util import (species_names_from_csv, missing_species_names,
 __author__ = "Gavin Huttley"
 __copyright__ = "Copyright 2014, Gavin Huttley"
 __credits__ = ["Gavin Huttley"]
-__license__ = "GPL"
+__license__ = "BSD"
 __version__ = "0.11"
 __maintainer__ = "Gavin Huttley"
 __email__ = "Gavin.Huttley@anu.edu.au"
@@ -25,7 +25,7 @@ LOGGER = CachingLogger(create_dir=True)
 def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwrite, test):
     """writes one-to-one orthologs of protein coding genes to outpath"""
     
-    species = Counter(compara.Species)
+    species = Counter(compara.species)
     written = 0
     with click.progressbar(ref_genes,
         label="Finding 1to1 orthologs") as ids:
@@ -35,28 +35,28 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
                 written += 1
                 continue
             
-            syntenic = compara.getRelatedGenes(StableId=gene,
-                            Relationship='ortholog_one2one')
+            syntenic = compara.get_related_genes(stableid=gene,
+                            relationship='ortholog_one2one')
         
-            if not not_strict and (syntenic is None or Counter(syntenic.getSpeciesSet()) != species):
+            if not not_strict and (syntenic is None or Counter(syntenic.get_species_set()) != species):
                 # skipping, not all species had a 1to1 ortholog for this gene
                 continue
             
             seqs = []
-            for m in syntenic.Members:
-                name = Species.getCommonName(m.genome.Species)
-                cds = m.CanonicalTranscript.Cds.withoutTerminalStopCodon(allow_partial=True)
-                cds.Name = name
+            for m in syntenic.members:
+                name = Species.get_common_name(m.genome.species)
+                cds = m.canonical_transcript.cds.trim_stop_codon(allow_partial=True)
+                cds.name = name
                 seqs.append([name, cds])
             
-            seqs = LoadSeqs(data=seqs, aligned=False)
+            seqs = LoadSeqs(data=seqs, aligned=False, array_align=False)
             if test:
                 print()
                 print(gene)
-                print(seqs.toFasta())
+                print(seqs.to_fasta())
             else:
                 with gzip.open(outfile_name, 'w') as outfile:
-                    outfile.write(seqs.toFasta() + '\n')
+                    outfile.write(seqs.to_fasta() + '\n')
                 LOGGER.output_file(outfile_name)
             
             written += 1
@@ -77,44 +77,45 @@ def renamed_seqs(aln):
     """renames sequences to be just species common name"""
     new = []
     names = Counter()
-    for seq in aln.Seqs:
-        latin = get_latin_from_label(seq.Name)
-        common = Species.getCommonName(latin)
+    for seq in aln.seqs:
+        latin = get_latin_from_label(seq.name)
+        common = Species.get_common_name(latin)
         names[common] += 1
-        seq.Name = common
-        new.append((seq.Name, seq))
+        seq.name = common
+        new.append((seq.name, seq))
     
-    if max(names.values()) > 1:
+    if max(list(names.values())) > 1:
+        # a species occures more than once
         return None
     
-    return LoadSeqs(data=new, moltype=DNA)
+    return LoadSeqs(data=new, moltype=DNA, array_align=False)
 
 def with_masked_features(aln, reverse=False):
     """returns an alignment with the tandem repeat sequences masked"""
-    for name in aln.Names:
-        seq = aln.getSeq(name)
+    for name in aln.names:
+        seq = aln.get_seq(name)
         remove = []
         for a in seq.annotations:
-            if a.Name not in ('trf', 'cpg', 'splice'):
+            if a.name not in ('trf', 'cpg', 'splice'):
                 remove.append(a)
                 break
         
         if remove:
-            seq.detachAnnotations(remove)
+            seq.detach_annotations(remove)
     
     if reverse:
         aln = aln.rc()
     
-    aln = aln.withMaskedAnnotations(['repeat', 'cpg'], mask_char='?')
-    aln = aln.withMaskedAnnotations(['exon'], mask_char='?')
+    aln = aln.with_masked_annotations(['repeat', 'cpg'], mask_char='?')
+    aln = aln.with_masked_annotations(['exon'], mask_char='?')
     return aln
 
 def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id,
                 mask_features, outdir, force_overwrite, test):
     """writes Ensembl `method` syntenic alignments to ref_genes"""
-    species = Counter(compara.Species)
-    common_names = list(map(Species.getCommonName, compara.Species))
-    filler = LoadSeqs(data=[(n, 'N') for n in common_names], moltype=DNA)
+    species = Counter(compara.species)
+    common_names = list(map(Species.get_common_name, compara.species))
+    filler = LoadSeqs(data=[(n, 'N') for n in common_names], moltype=DNA, array_align=False)
     
     written = 0
     with click.progressbar(ref_genes,
@@ -124,16 +125,15 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             if not gene:
                 continue
             
-            if gene.CanonicalTranscript.Introns is None:
+            if gene.canonical_transcript.introns is None:
                 continue
             
-            outfile_name = os.path.join(outpath, "%s.fa.gz" % gene.StableId)
+            outfile_name = os.path.join(outpath, "%s.fa.gz" % gene.stableid)
             if os.path.exists(outfile_name) and not force_overwrite:
                 written += 1
                 continue
             
-            syntenic_regions = []
-            regions = list(compara.getSyntenicRegions(region=gene.CanonicalTranscript,
+            regions = list(compara.get_syntenic_regions(region=gene.canonical_transcript,
                                                 method_clade_id=str(method_clade_id)))
             alignments = []
             for index, region in enumerate(regions):
@@ -141,14 +141,14 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     continue
                 
                 try:
-                    got = Counter(region.getSpeciesSet())
+                    got = Counter(region.get_species_set())
                 except (AttributeError, AssertionError):
                     # this is a PyCogent bug
                     error = sys.exc_info()
                     err_type = str(error[0]).split('.')[-1][:-2]
                     err_msg = str(error[1])
-                    msg = 'gene_stable_id=%s; err_type=%s; msg=%s' % (gene.StableId, err_type, err_msg)
-                    click.echo(click.style("ERROR:" + msg, fg="red"))
+                    msg = 'gene_stable_id=%s; err_type=%s; msg=%s' % (gene.stableid, err_type, err_msg)
+                    click.secho("ERROR:" + msg, fg="red")
                     LOGGER.log_message(msg, label="ERROR")
                     continue
                 
@@ -156,10 +156,10 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     continue
                 
                 if mask_features:
-                    aln = region.getAlignment(feature_types=['gene', 'repeat', 'cpg'])
-                    aln = with_masked_features(aln, reverse=gene.Location.Strand == -1)
+                    aln = region.get_alignment(feature_types=['gene', 'repeat', 'cpg'])
+                    aln = with_masked_features(aln, reverse=gene.location.strand == -1)
                 else:
-                    aln = region.getAlignment()
+                    aln = region.get_alignment()
                 
                 if aln is None:
                     continue
@@ -186,7 +186,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 print(align)
             else:
                 with gzip.open(outfile_name, 'w') as outfile:
-                    outfile.write(align.toFasta())
+                    outfile.write(align.to_fasta())
                 LOGGER.output_file(outfile_name)
             
             written += 1
@@ -216,7 +216,7 @@ def _get_account(ensembl_account):
 def _get_gene_from_compara(compara, stable_id):
     """returns gene instance from a compara db"""
     for sp in list(compara._genomes.values()):
-        gene = sp.getGeneByStableId(stable_id)
+        gene = sp.get_gene_by_stableid(stable_id)
         if gene:
             break
     return gene
@@ -224,7 +224,7 @@ def _get_gene_from_compara(compara, stable_id):
 def _get_ref_genes(ref_genome, chroms, limit, biotype='protein_coding'):
     """returns stable ID's for genes from reference genome"""
     print("Sampling %s genes" % ref_genome)
-    all_genes = ref_genome.getGenesMatching(BioType=biotype)
+    all_genes = ref_genome.get_genes_matching(biotype=biotype)
     
     ref_genes = []
     with click.progressbar(all_genes,
@@ -232,10 +232,10 @@ def _get_ref_genes(ref_genome, chroms, limit, biotype='protein_coding'):
         for index, g in enumerate(genes):
             if limit is not None and index >= limit:
                 break
-            if chroms and g.Location.CoordName not in chroms:
+            if chroms and g.location.coord_name not in chroms:
                 continue
             
-            ref_genes.append(g.StableId)
+            ref_genes.append(g.stableid)
     return ref_genes
 
 class Config(object):
@@ -281,12 +281,12 @@ def show_align_methods(ctx, species, release):
         msg = ["The following species names don't match an Ensembl record. Check spelling!",
               str(missing_species),
               "\nAvailable species are at this server are:",
-              str(display_available_dbs(account))]
+              str(display_available_dbs(ctx.ensembl_account))]
         
         click.echo(click.style("\n".join(msg), fg="red"))
         sys.exit(-1)
     
-    compara = Compara(species, Release=release, account=ctx.ensembl_account)
+    compara = Compara(species, release=release, account=ctx.ensembl_account)
     
     if show_align_methods:
         display_ensembl_alignment_table(compara)
@@ -298,7 +298,7 @@ def show_align_methods(ctx, species, release):
 @click.option('--release', required=True, help='Ensembl release.')
 @click.option('--outdir', required=True, type=click.Path(resolve_path=True), help='Path to write files.') ##
 @click.option('--ref', default=None, help='Reference species.')
-@click.option('--ref_genes_file', default=None, type=click.File('rb'),
+@click.option('--ref_genes_file', default=None, type=click.File('r'),
     help='File containing Ensembl stable identifiers for genes of interest. '
          'One identifier per line.')
 @click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
@@ -329,7 +329,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
     args['ensembl_account'] = str(args['ensembl_account'])
     LOGGER.log_message(str(args), label="params")
     
-    if ctx.test:
+    if ctx.test and limit == 0:
         limit = 2
     else:
         limit = limit or None
@@ -355,7 +355,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
         print("The reference species not in species names")
         exit(-1)
     
-    compara = Compara(species, Release=release, account=ctx.ensembl_account)
+    compara = Compara(species, release=release, account=ctx.ensembl_account)
     runlog_path = os.path.join(outdir, logfile_name)
     
     if os.path.exists(runlog_path) and not ctx.force_overwrite:
@@ -379,7 +379,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
         print("Created", outdir)
     
     if ref and not ref_genes_file:
-        ref_genome = Genome(ref, Release=release, account=ctx.ensembl_account)
+        ref_genome = Genome(ref, release=release, account=ctx.ensembl_account)
         ref_genes = _get_ref_genes(ref_genome, chroms, limit)
     else:
         ref_genes = [l.strip() for l in ref_genes_file if l.strip()]

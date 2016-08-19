@@ -1,17 +1,12 @@
-import os, shutil
-
-import click
 from click.testing import CliRunner
 
-from cogent import LoadTable
+from cogent3 import LoadTable
 
 from homologsampler import cli
 
 def _parse_db_display(output, columns):
     """finds the table display and accumulates the content"""
     result = output.splitlines()
-    has_table = False
-    records = []
     header = []
     for index, line in enumerate(result):
         if not header and columns[0] in line:
@@ -40,7 +35,7 @@ def test_show_databases():
     r = runner.invoke(cli, ["show_available_species"])
     assert r.exit_code == 0
     result = _parse_db_display(r.output, ["Release", "Db Name"])
-    assert result.Shape[0] > 0
+    assert result.shape[0] > 0
 
 def test_show_release_databases():
     """exercises showing all databases"""
@@ -48,7 +43,7 @@ def test_show_release_databases():
     runner = CliRunner()
     r = runner.invoke(cli, ["show_available_species", "--release=81"])
     result = _parse_db_display(r.output, ["Release", "Db Name"])
-    db_val = result.getDistinctValues('Release')
+    db_val = result.distinct_values('Release')
     assert db_val == set(['81'])
 
 def test_show_align_methods():
@@ -57,12 +52,12 @@ def test_show_align_methods():
     r = runner.invoke(cli, ["show_align_methods", "--species=human,chimp", "--release=81"])
     assert r.exit_code == 0
     result = _parse_db_display(r.output, ["method_link_species_set_id"])
-    assert result.Shape[0] > 0
+    assert result.shape[0] > 0
 
 def test_one2one_cds():
     """samples a CDS sequence"""
     runner = CliRunner()
-    r = runner.invoke(cli, ["--test=1", "one2one", "--species=human,mouse", "--release=81",
+    r = runner.invoke(cli, ["--test", "one2one", "--species=human,mouse", "--release=81",
                 "--ref=human", "--outdir=delme"])
     
     assert ">Human" in r.output and ">Mouse" in r.output
@@ -70,7 +65,8 @@ def test_one2one_cds():
 def test_one2one_intron():
     """samples intron sequence"""
     runner = CliRunner()
-    r = runner.invoke(cli, ["--test=14", "one2one", "--species=human,chimp", "--release=81",
-                "--ref=human", "--outdir=delme", "--introns", "--method_clade_id=688"])
+    r = runner.invoke(cli, ["--test", "one2one", "--species=human,chimp", "--release=81",
+                "--ref=human", "--outdir=delme", "--introns", "--method_clade_id=688",
+            "--limit=14"])
     assert ">Human" in r.output and ">Chimp" in r.output
 
