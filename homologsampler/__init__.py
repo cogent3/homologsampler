@@ -51,9 +51,9 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
             
             seqs = LoadSeqs(data=seqs, aligned=False)
             if test:
-                print
-                print gene
-                print seqs.toFasta()
+                print()
+                print(gene)
+                print(seqs.toFasta())
             else:
                 with gzip.open(outfile_name, 'w') as outfile:
                     outfile.write(seqs.toFasta() + '\n')
@@ -113,7 +113,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 mask_features, outdir, force_overwrite, test):
     """writes Ensembl `method` syntenic alignments to ref_genes"""
     species = Counter(compara.Species)
-    common_names = map(Species.getCommonName, compara.Species)
+    common_names = list(map(Species.getCommonName, compara.Species))
     filler = LoadSeqs(data=[(n, 'N') for n in common_names], moltype=DNA)
     
     written = 0
@@ -183,7 +183,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 align += (filler + aln)
             
             if test:
-                print align
+                print(align)
             else:
                 with gzip.open(outfile_name, 'w') as outfile:
                     outfile.write(align.toFasta())
@@ -191,7 +191,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             
             written += 1
         
-    print "Wrote %d files to %s" % (written, outpath)
+    print("Wrote %d files to %s" % (written, outpath))
     return
 
 
@@ -200,7 +200,7 @@ def display_ensembl_alignment_table(compara):
     compara.method_species_links.Legend = \
     "Assign the desired value from method_link_species_set_id to the"\
     " method_clade_id argument"
-    print compara.method_species_links
+    print(compara.method_species_links)
     exit(0)
 
 def _get_account(ensembl_account):
@@ -215,7 +215,7 @@ def _get_account(ensembl_account):
 
 def _get_gene_from_compara(compara, stable_id):
     """returns gene instance from a compara db"""
-    for sp in compara._genomes.values():
+    for sp in list(compara._genomes.values()):
         gene = sp.getGeneByStableId(stable_id)
         if gene:
             break
@@ -223,7 +223,7 @@ def _get_gene_from_compara(compara, stable_id):
 
 def _get_ref_genes(ref_genome, chroms, limit, biotype='protein_coding'):
     """returns stable ID's for genes from reference genome"""
-    print "Sampling %s genes" % ref_genome
+    print("Sampling %s genes" % ref_genome)
     all_genes = ref_genome.getGenesMatching(BioType=biotype)
     
     ref_genes = []
@@ -266,7 +266,7 @@ def show_available_species(ctx, release):
     """shows available species and Ensembl release at ENSEMBL_ACCOUNT"""
     available = display_available_dbs(ctx.ensembl_account, release)
     available.Title = "Species available at: %s" % str(ctx.ensembl_account)
-    print available
+    print(available)
     sys.exit(0)
     
 @cli.command()
@@ -352,7 +352,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
         exit(-1)
     
     if ref and ref not in species:
-        print "The reference species not in species names"
+        print("The reference species not in species names")
         exit(-1)
     
     compara = Compara(species, Release=release, account=ctx.ensembl_account)
@@ -376,7 +376,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
     
     if not os.path.exists(outdir) and not ctx.test:
         os.makedirs(outdir)
-        print "Created", outdir
+        print("Created", outdir)
     
     if ref and not ref_genes_file:
         ref_genome = Genome(ref, Release=release, account=ctx.ensembl_account)
@@ -385,10 +385,10 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
         ref_genes = [l.strip() for l in ref_genes_file if l.strip()]
     
     if not introns:
-        print "Getting orthologs"
+        print("Getting orthologs")
         get_one2one_orthologs(compara, ref_genes, outdir, not_strict, ctx.force_overwrite, ctx.test)
     else:
-        print "Getting orthologous introns"
+        print("Getting orthologous introns")
         get_syntenic_alignments_introns(compara, ref_genes, outdir, method_clade_id,
                 mask_features, outdir, ctx.force_overwrite, ctx.test)
     
