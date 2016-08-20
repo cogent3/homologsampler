@@ -318,6 +318,8 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
     """Command line tool for sampling homologous sequences from Ensembl."""
     if not any([ref, ref_genes_file]):
         # just the command name, indicate they need to display help
+        click.secho("Missing 'ref' and 'ref_genes_file'")
+        ctx = click.get_current_context()
         msg = "%s\n\n--help to see all options\n" % ctx.get_usage()
         click.echo(msg)
         exit(-1)
