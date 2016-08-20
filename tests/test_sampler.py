@@ -57,16 +57,16 @@ def test_show_align_methods():
 def test_one2one_cds():
     """samples a CDS sequence"""
     runner = CliRunner()
-    r = runner.invoke(cli, ["--test", "one2one", "--species=human,mouse", "--release=81",
-                "--ref=human", "--outdir=delme"])
+    r = runner.invoke(cli, ["one2one", "--species=human,mouse", "--release=81",
+                "--ref=human", "--outdir=delme", "--test"])
     
     assert ">Human" in r.output and ">Mouse" in r.output
     
 def test_one2one_intron():
     """samples intron sequence"""
     runner = CliRunner()
-    r = runner.invoke(cli, ["--test", "one2one", "--species=human,chimp", "--release=81",
+    r = runner.invoke(cli, ["one2one", "--species=human,chimp", "--release=81",
                 "--ref=human", "--outdir=delme", "--introns", "--method_clade_id=688",
-            "--limit=14"])
+            "--limit=14", "--test"])
     assert ">Human" in r.output and ">Chimp" in r.output
 

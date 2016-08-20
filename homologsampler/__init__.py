@@ -55,7 +55,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
                 print(gene)
                 print(seqs.to_fasta())
             else:
-                with gzip.open(outfile_name, 'w') as outfile:
+                with gzip.open(outfile_name, 'wt') as outfile:
                     outfile.write(seqs.to_fasta() + '\n')
                 LOGGER.output_file(outfile_name)
             
@@ -244,49 +244,67 @@ class Config(object):
         self.force_overwrite = False
         self.test = False
 
-pass_config = click.make_pass_decorator(Config, ensure=True)
+_ensembl_account = click.option('--ensembl_account', envvar='ENSEMBL_ACCOUNT',
+    help="shell variable with MySQL account details, e.g. export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
+_force_overwite = click.option('-F', '--force_overwrite', is_flag=True, help="Overwrite existing files.")
+_test = click.option('--test', is_flag=True,
+    help="sets limit # queries to 2, does not write files, prints seqs and exits.")
+_release = click.option('--release', help='Ensembl release.')
+_species = click.option('--species', required=True, help='Comma separated list of species names.')
+_outdir = click.option('--outdir', required=True, type=click.Path(resolve_path=True), help='Path to write files.') ##
+_ref = click.option('--ref', default=None, help='Reference species.')
+_ref_genes_file = click.option('--ref_genes_file', default=None, type=click.File('r'),
+    help='File containing Ensembl stable identifiers for genes of interest. '
+         'One identifier per line.')
+_coord_names = click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
+                help='File containing chrom/coord names to restrict sampling to, one per line.')
+_not_strict = click.option('--not_strict', is_flag=True,
+    help="Genes with an ortholog in any species are exported. "
+         "Default is all species must have a ortholog.")
+_introns = click.option('--introns', is_flag=True, help="Sample syntenic alignments of introns, requires --method_clade_id.")
+_method_clade_id = click.option('--method_clade_id',
+    help="The value of method_link_species_set_id to use (see ) "
+    "required if sampling introns.")
+_mask_features = click.option('--mask_features', is_flag=True, help="Intron masks repeats, exons, CpG islands.")
+_limit = click.option('--limit', type=int, default=0, help="Limit to this number of genes.")
+_logfile_name = click.option('--logfile_name', default="one2one.log", help="Name for log file, written to outdir.")
+_version = click.version_option(version=__version__)
 
 @click.group()
-@click.option('--ensembl_account', envvar='ENSEMBL_ACCOUNT',
-    help="shell variable with MySQL account details, e.g. export ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
-@click.option('-F', '--force_overwrite', is_flag=True, help="Overwrite existing files.")
-@click.option('--test', is_flag=True,
-    help="sets limit # queries to 2, does not write files, prints seqs and exits.")
-@click.version_option(version=__version__)
-@pass_config
-def cli(ctx, ensembl_account, force_overwrite, test):
-    ctx.ensembl_account = _get_account(ensembl_account)
-    ctx.force_overwrite = force_overwrite
-    ctx.test = test
+@_version
+def cli():
+    pass
 
 @cli.command()
-@click.option('--release', help='Ensembl release.')
-@pass_config
-def show_available_species(ctx, release):
+@_ensembl_account
+@_release
+def show_available_species(ensembl_account, release):
     """shows available species and Ensembl release at ENSEMBL_ACCOUNT"""
-    available = display_available_dbs(ctx.ensembl_account, release)
-    available.Title = "Species available at: %s" % str(ctx.ensembl_account)
+    ensembl_account = _get_account(ensembl_account)
+    available = display_available_dbs(ensembl_account, release)
+    available.title = "Species available at: %s" % str(ensembl_account)
     print(available)
     sys.exit(0)
     
 @cli.command()
-@click.option('--species', required=True, help='Comma separated list of species names.')
-@click.option('--release', required=True, help='Ensembl release.')
-@pass_config
-def show_align_methods(ctx, species, release):
+@_ensembl_account
+@_species
+@_release
+def show_align_methods(ensembl_account, species, release):
     """Shows the align methods in release ENSEMBL_ACCOUNT and exits."""
+    ensembl_account = _get_account(ensembl_account)
     species = species_names_from_csv(species)
     missing_species = missing_species_names(species)
     if missing_species:
         msg = ["The following species names don't match an Ensembl record. Check spelling!",
               str(missing_species),
               "\nAvailable species are at this server are:",
-              str(display_available_dbs(ctx.ensembl_account))]
+              str(display_available_dbs(ensembl_account))]
         
         click.echo(click.style("\n".join(msg), fg="red"))
         sys.exit(-1)
     
-    compara = Compara(species, release=release, account=ctx.ensembl_account)
+    compara = Compara(species, release=release, account=ensembl_account)
     
     if show_align_methods:
         display_ensembl_alignment_table(compara)
@@ -294,27 +312,22 @@ def show_align_methods(ctx, species, release):
     
 
 @cli.command()
-@click.option('--species', required=True, help='Comma separated list of species names.')
-@click.option('--release', required=True, help='Ensembl release.')
-@click.option('--outdir', required=True, type=click.Path(resolve_path=True), help='Path to write files.') ##
-@click.option('--ref', default=None, help='Reference species.')
-@click.option('--ref_genes_file', default=None, type=click.File('r'),
-    help='File containing Ensembl stable identifiers for genes of interest. '
-         'One identifier per line.')
-@click.option('--coord_names', default=None, type=click.Path(resolve_path=True),
-                help='File containing chrom/coord names to restrict sampling to, one per line.')
-@click.option('--not_strict', is_flag=True,
-    help="Genes with an ortholog in any species are exported. "
-         "Default is all species must have a ortholog.")
-@click.option('--introns', is_flag=True, help="Sample syntenic alignments of introns, requires --method_clade_id.")
-@click.option('--method_clade_id',
-    help="The value of method_link_species_set_id to use (see ) "
-    "required if sampling introns.")
-@click.option('--mask_features', is_flag=True, help="Intron masks repeats, exons, CpG islands.")
-@click.option('--limit', type=int, default=0, help="Limit to this number of genes.")
-@click.option('--logfile_name', default="one2one.log", help="Name for log file, written to outdir.")
-@pass_config
-def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not_strict, introns, method_clade_id, mask_features, logfile_name, limit):
+@_ensembl_account
+@_species
+@_release
+@_outdir
+@_ref
+@_ref_genes_file
+@_coord_names
+@_not_strict
+@_introns
+@_method_clade_id
+@_mask_features
+@_logfile_name
+@_limit
+@_force_overwite
+@_test
+def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file, coord_names, not_strict, introns, method_clade_id, mask_features, logfile_name, limit, force_overwrite, test):
     """Command line tool for sampling homologous sequences from Ensembl."""
     if not any([ref, ref_genes_file]):
         # just the command name, indicate they need to display help
@@ -323,15 +336,14 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
         msg = "%s\n\n--help to see all options\n" % ctx.get_usage()
         click.echo(msg)
         exit(-1)
-        
     
+    
+    ensembl_account = _get_account(ensembl_account)
     args = locals()
-    args.pop("ctx")
-    args.update(vars(ctx))
-    args['ensembl_account'] = str(args['ensembl_account'])
+    args['ensembl_account'] = str(ensembl_account)
     LOGGER.log_message(str(args), label="params")
     
-    if ctx.test and limit == 0:
+    if test and limit == 0:
         limit = 2
     else:
         limit = limit or None
@@ -348,7 +360,7 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
         msg = ["The following species names don't match an Ensembl record. Check spelling!",
               str(species_missing),
               "\nAvailable species are at this server are:",
-              str(display_available_dbs(ctx.ensembl_account))]
+              str(display_available_dbs(ensembl_account))]
         
         click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
@@ -357,16 +369,16 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
         print("The reference species not in species names")
         exit(-1)
     
-    compara = Compara(species, release=release, account=ctx.ensembl_account)
+    compara = Compara(species, release=release, account=ensembl_account)
     runlog_path = os.path.join(outdir, logfile_name)
     
-    if os.path.exists(runlog_path) and not ctx.force_overwrite:
+    if os.path.exists(runlog_path) and not force_overwrite:
         msg = ["Log file (%s) already exists!" % runlog_path,
                "Use force_overwrite or provide logfile_name"]
         click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
     
-    if not ctx.test:
+    if not test:
         LOGGER.log_file_path = runlog_path
     
     chroms = None
@@ -376,23 +388,23 @@ def one2one(ctx, species, release, outdir, ref, ref_genes_file, coord_names, not
     elif coord_names and ref:
         chroms = get_chrom_names(ref, compara)
     
-    if not os.path.exists(outdir) and not ctx.test:
+    if not os.path.exists(outdir) and not test:
         os.makedirs(outdir)
         print("Created", outdir)
     
     if ref and not ref_genes_file:
-        ref_genome = Genome(ref, release=release, account=ctx.ensembl_account)
+        ref_genome = Genome(ref, release=release, account=ensembl_account)
         ref_genes = _get_ref_genes(ref_genome, chroms, limit)
     else:
         ref_genes = [l.strip() for l in ref_genes_file if l.strip()]
     
     if not introns:
         print("Getting orthologs")
-        get_one2one_orthologs(compara, ref_genes, outdir, not_strict, ctx.force_overwrite, ctx.test)
+        get_one2one_orthologs(compara, ref_genes, outdir, not_strict, force_overwrite, test)
     else:
         print("Getting orthologous introns")
         get_syntenic_alignments_introns(compara, ref_genes, outdir, method_clade_id,
-                mask_features, outdir, ctx.force_overwrite, ctx.test)
+                mask_features, outdir, force_overwrite, test)
     
 
 if __name__ == "__main__":
