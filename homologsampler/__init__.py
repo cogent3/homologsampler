@@ -185,7 +185,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             if test:
                 print(align)
             else:
-                with gzip.open(outfile_name, 'w') as outfile:
+                with gzip.open(outfile_name, 'wt') as outfile:
                     outfile.write(align.to_fasta())
                 LOGGER.output_file(outfile_name)
             
