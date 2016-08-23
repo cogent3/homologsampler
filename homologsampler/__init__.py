@@ -365,6 +365,9 @@ def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file, coor
         click.echo(click.style("\n".join(msg), fg="red"))
         exit(-1)
     
+    if ref:
+        ref = ref.lower()
+    
     if ref and ref not in species:
         print("The reference species not in species names")
         exit(-1)

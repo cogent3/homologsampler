@@ -33,7 +33,7 @@ def display_available_dbs(account, release=None):
 
 def species_names_from_csv(species):
     """returns species names"""
-    species = [s.strip() for s in species.split(',')]
+    species = [s.strip().lower() for s in species.split(',')]
     return species
 
 def missing_species_names(names):
