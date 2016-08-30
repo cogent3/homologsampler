@@ -6,9 +6,8 @@ from collections import Counter, defaultdict
 
 import click
 
-from cogent3 import LoadSeqs, DNA
+from cogent3 import LoadSeqs, LoadTable, DNA
 from ensembldb3 import Compara, Genome, HostAccount, Species
-
 from scitrack import CachingLogger
 
 from homologsampler.util import (species_names_from_csv, missing_species_names,
@@ -30,6 +29,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
     
     species = Counter(compara.species)
     written = 0
+    records = []
     with click.progressbar(ref_genes,
         label="Finding 1to1 orthologs") as ids:
         for gene in ids:
@@ -47,6 +47,8 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
             
             seqs = []
             for m in syntenic.members:
+                records.append([gene, m.stableid, m.location,
+                                m.description])
                 name = Species.get_common_name(m.genome.species)
                 cds = m.canonical_transcript.cds.trim_stop_codon(allow_partial=True)
                 cds.name = name
@@ -69,6 +71,11 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
         msg = "Wrote %d files to %s" % (written, outpath)
     
     click.echo(msg)
+    
+    if written > 0:
+        metadata = LoadTable(header=["refid", "stableid", "location",
+                                     "description"], rows=records)
+        metadata.write(os.path.join(outpath, "metadata.txt"),sep="\t")
     
     return
 
@@ -121,9 +128,11 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
     filler = LoadSeqs(data=[(n, 'N') for n in common_names], moltype=DNA, array_align=False)
     
     written = 0
+    records = []
     with click.progressbar(ref_genes,
         label="Finding 1to1 intron orthologs") as ids:
         for gene_id in ids:
+            locations = defaultdict(list)
             gene = _get_gene_from_compara(compara, gene_id)
             if not gene:
                 continue
@@ -170,6 +179,9 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 aln = renamed_seqs(aln)
                 if aln is not None:
                     alignments.append(aln)
+                
+                for m in region.members:
+                    locations[m.genome.species].append(m.location)
             
             if not alignments:
                 continue
@@ -193,8 +205,27 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 LOGGER.output_file(outfile_name)
             
             written += 1
+            
+            # create unified location for each species and record
+            for species in locations:
+                if len(locations[species]) > 1:
+                    union = locations[species][0]
+                    for loc in locations[species][1:]:
+                        union = union.union(loc)
+                        if union is None:
+                            raise ValueError("inconsistent location data for "
+                                             "gene based syntenic block %s" % \
+                                             locations[species])
+                else:
+                    loc = locations[species][0]
+                
+                records.append([gene_id, loc])
         
     print("Wrote %d files to %s" % (written, outpath))
+    if written > 0:
+        metadata = LoadTable(header=["refid",  "location"], rows=records)
+        metadata.write(os.path.join(outpath, "metadata.txt"),sep="\t")
+    
     return
 
 
