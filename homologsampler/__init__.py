@@ -1,5 +1,8 @@
-import os, gzip, warnings, sys
-from collections import Counter
+import os
+import gzip
+import warnings
+import sys
+from collections import Counter, defaultdict
 
 import click
 
