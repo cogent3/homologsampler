@@ -9,6 +9,7 @@ syntax:glob
 *.rej
 *.orig
 *.wpr
+*.wpu
 *.pdf
 _build/*
 build
@@ -16,3 +17,4 @@ build
 *.idea
 *.coverage
 *egg-info*
+*.cache*
