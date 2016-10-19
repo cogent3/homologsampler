@@ -38,9 +38,14 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
                 written += 1
                 continue
             
-            syntenic = compara.get_related_genes(stableid=gene,
-                            relationship='ortholog_one2one')
-        
+            syntenic = list(compara.get_related_genes(stableid=gene,
+                            relationship='ortholog_one2one'))
+            
+            if len(syntenic) != 1:
+                continue
+            
+            syntenic = syntenic[0]
+            
             if not not_strict and (syntenic is None or Counter(syntenic.get_species_set()) != species):
                 # skipping, not all species had a 1to1 ortholog for this gene
                 continue
