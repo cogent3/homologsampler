@@ -82,7 +82,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
     if written > 0:
         metadata = LoadTable(header=["refid", "stableid", "location",
                                      "description"], rows=records)
-        metadata.write(os.path.join(outpath, "metadata.txt"), sep="\t")
+        metadata.write(os.path.join(outpath, "metadata.tsv"))
 
     return
 
@@ -239,7 +239,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
     print("Wrote %d files to %s" % (written, outpath))
     if written > 0:
         metadata = LoadTable(header=["refid", "location"], rows=records)
-        metadata.write(os.path.join(outpath, "metadata.txt"), sep="\t")
+        metadata.write(os.path.join(outpath, "metadata.tsv"))
 
     return
 
