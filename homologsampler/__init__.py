@@ -147,9 +147,11 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             locations = defaultdict(list)
             gene = _get_gene_from_compara(compara, gene_id)
             if not gene:
+                LOGGER.log_message("stableid '%s' not found" % gene_id)
                 continue
 
             if gene.canonical_transcript.introns is None:
+                LOGGER.log_message("stableid '%s' has no introns" % gene_id)
                 continue
 
             outfile_name = os.path.join(outpath, "%s.fa.gz" % gene.stableid)
@@ -162,6 +164,8 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             alignments = []
             for index, region in enumerate(regions):
                 if region is None:
+                    msg = "stableid '%s' has no syntenic regions" % gene_id
+                    LOGGER.log_message(msg)
                     continue
 
                 try:
@@ -178,6 +182,10 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     continue
 
                 if got != species:
+                    msg = ["stableid '%s'" % gene_id,
+                           "species set %s" % got,
+                           "does not match expected %s" % species]
+                    LOGGER.log_message(" ".join(msg))
                     continue
 
                 if mask_features:
@@ -189,6 +197,8 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     aln = region.get_alignment()
 
                 if aln is None:
+                    msg = "stableid '%s' has no syntenic alignment" % gene_id
+                    LOGGER.log_message(msg)
                     continue
 
                 aln = renamed_seqs(aln)
@@ -199,6 +209,8 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     locations[m.genome.species].append(m.location)
 
             if not alignments:
+                msg = "stableid '%s' has no alignments" % gene_id
+                LOGGER.log_message(msg)
                 continue
 
             # we put a column of Ns between syntenic regions so that subsequent
@@ -213,7 +225,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 align += (filler + aln)
 
             if test:
-                print(align)
+                print(repr(align))
             else:
                 with gzip.open(outfile_name, 'wt') as outfile:
                     outfile.write(align.to_fasta())
@@ -228,9 +240,11 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     for loc in locations[species][1:]:
                         union = union.union(loc)
                         if union is None:
-                            raise ValueError("inconsistent location data for "
-                                             "gene based syntenic block %s" %
-                                             locations[species])
+                            msg = ["stableid '%s' has" % gene_id,
+                                   "inconsistent location data for gene",
+                                   "based syntenic block %s" % locations[sp]]
+                            LOGGER.log_message(" ".join(msg))
+                            break
                 else:
                     loc = locations[species][0]
 
