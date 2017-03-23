@@ -234,10 +234,10 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
             written += 1
 
             # create unified location for each species and record
-            for species in locations:
-                if len(locations[species]) > 1:
-                    union = locations[species][0]
-                    for loc in locations[species][1:]:
+            for sp in locations:
+                if len(locations[sp]) > 1:
+                    union = locations[sp][0]
+                    for loc in locations[sp][1:]:
                         union = union.union(loc)
                         if union is None:
                             msg = ["stableid '%s' has" % gene_id,
@@ -246,7 +246,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                             LOGGER.log_message(" ".join(msg))
                             break
                 else:
-                    loc = locations[species][0]
+                    loc = locations[sp][0]
 
                 records.append([gene_id, loc])
 
