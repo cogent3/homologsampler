@@ -394,7 +394,11 @@ def dump_genes(ensembl_account, species, outpath, coord_names, release, limit):
         click.secho("\n".join(msg), fg="red")
         sys.exit(-1)
 
-    chroms = load_coord_names(coord_names)
+    if coord_names:
+        chroms = load_coord_names(coord_names)
+    else:
+        chroms = None
+
     genome = Genome(species[0], release=release, account=ensembl_account)
     genes = _get_ref_genes(genome, chroms, limit)
     records = []
