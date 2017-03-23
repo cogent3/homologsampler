@@ -290,9 +290,9 @@ def _get_gene_from_compara(compara, stable_id):
 
 def _get_ref_genes(ref_genome, chroms, limit, biotype='protein_coding'):
     """returns stable ID's for genes from reference genome"""
+    limit = None if not limit else limit
     print("Sampling %s genes" % ref_genome)
     all_genes = ref_genome.get_genes_matching(biotype=biotype)
-
     ref_genes = []
     with click.progressbar(all_genes,
                            label="Finding genes") as genes:
@@ -302,7 +302,7 @@ def _get_ref_genes(ref_genome, chroms, limit, biotype='protein_coding'):
             if chroms and g.location.coord_name not in chroms:
                 continue
 
-            ref_genes.append(g.stableid)
+            ref_genes.append(g)
     return ref_genes
 
 
@@ -331,7 +331,8 @@ _outdir = click.option('--outdir', required=True,
                        help='Path to write files.')
 _ref = click.option('--ref', default=None, help='Reference species.')
 _ref_genes_file = click.option('--ref_genes_file', default=None,
-                               type=click.File('r'),
+                               type=click.Path(resolve_path=True,
+                                               exists=True),
                                help="File containing Ensembl stable "
                                "identifiers for genes of interest. "
                                "One identifier per line.")
@@ -362,6 +363,52 @@ _version = click.version_option(version=__version__)
 @_version
 def cli():
     pass
+
+
+@cli.command()
+@_ensembl_account
+@_species
+@click.option('--outpath', required=True, default="gene_metadata.tsv",
+              help='Output file name.')
+@_coord_names
+@_release
+@_limit
+def dump_genes(ensembl_account, species, outpath, coord_names, release, limit):
+    """Dump meta data table for genes from one species in release ENSEMBL_ACCOUNT
+    and exits."""
+    ensembl_account = _get_account(ensembl_account)
+    species = species_names_from_csv(species)
+    if len(species) > 1:
+        msg = "dump_genes handles single species only"
+        click.secho(msg, fg="red")
+        sys.exit(-1)
+
+    missing_species = missing_species_names(species)
+    if missing_species:
+        msg = ["The following species names don't match an Ensembl record. "
+               "Check spelling!",
+               str(missing_species),
+               "\nAvailable species are at this server are:",
+               str(display_available_dbs(ensembl_account))]
+
+        click.secho("\n".join(msg), fg="red")
+        sys.exit(-1)
+
+    chroms = load_coord_names(coord_names)
+    genome = Genome(species[0], release=release, account=ensembl_account)
+    genes = _get_ref_genes(genome, chroms, limit)
+    records = []
+    for g in genes:
+        records.append([g.stableid, g.biotype, g.location, g.description])
+
+    if records:
+        table = LoadTable(header=["stableid", "biotype", "location",
+                                  "description"], rows=records)
+        table.write(outpath)
+        click.secho("Wrote %d genes to %s" % (table.shape[0], outpath),
+                    fg="green")
+    else:
+        click.secho("No genes matching criteria", fg="blue")
 
 
 @cli.command()
@@ -488,9 +535,16 @@ def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file,
 
     if ref and not ref_genes_file:
         ref_genome = Genome(ref, release=release, account=ensembl_account)
-        ref_genes = _get_ref_genes(ref_genome, chroms, limit)
+        ref_genes = [g.stableid
+                     for g in _get_ref_genes(ref_genome, chroms, limit)]
     else:
-        ref_genes = [l.strip() for l in ref_genes_file if l.strip()]
+        ref_genes = LoadTable(ref_genes_file)
+        if "stableid" not in ref_genes.header:
+            msg = "ref_genes_file does not have a 'stableid' column header"
+            click.secho(msg, fg="red")
+            exit(-1)
+
+        ref_genes = ref_genes.tolist("stableid")
 
     if not introns:
         print("Getting orthologs")
