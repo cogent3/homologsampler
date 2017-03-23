@@ -250,7 +250,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
 
                 records.append([gene_id, loc])
 
-    print("Wrote %d files to %s" % (written, outpath))
+    click.secho("Wrote %d files to %s" % (written, outpath), fg="green")
     if written > 0:
         metadata = LoadTable(header=["refid", "location"], rows=records)
         metadata.write(os.path.join(outpath, "metadata.tsv"))
