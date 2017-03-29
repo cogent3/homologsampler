@@ -238,17 +238,22 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 if len(locations[sp]) > 1:
                     union = locations[sp][0]
                     for loc in locations[sp][1:]:
-                        union = union.union(loc)
-                        if union is None:
+                        if loc is None:
                             msg = ["stableid '%s' has" % gene_id,
                                    "inconsistent location data for gene",
                                    "based syntenic block %s" % locations[sp]]
-                            LOGGER.log_message(" ".join(msg))
-                            break
+                            LOGGER.log_message(" ".join(msg), label="WARN")
+                            
+                            if union is not None:
+                                break
+                            
+                            raise ValueError(" ".join(msg))
+                        
+                        union = union.union(loc)
                 else:
-                    loc = locations[sp][0]
+                    union = locations[sp][0]
 
-                records.append([gene_id, loc])
+                records.append([gene_id, union])
 
     click.secho("Wrote %d files to %s" % (written, outpath), fg="green")
     if written > 0:
@@ -549,13 +554,16 @@ def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file,
             exit(-1)
 
         ref_genes = ref_genes.tolist("stableid")
-
+    
+    if limit:
+        ref_genes = ref_genes[:limit]
+    
     if not introns:
-        print("Getting orthologs")
+        print("Getting orthologs %d genes" % len(ref_genes))
         get_one2one_orthologs(compara, ref_genes, outdir,
                               not_strict, force_overwrite, test)
     else:
-        print("Getting orthologous introns")
+        print("Getting orthologous introns for %d genes" % len(ref_genes))
         get_syntenic_alignments_introns(compara, ref_genes, outdir,
                                         method_clade_id, mask_features,
                                         outdir, force_overwrite, test)
