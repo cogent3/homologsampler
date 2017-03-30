@@ -208,15 +208,24 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     alignments.append(aln)
 
                 for m in region.members:
-                    if m.genome.species in locations:
-                        union = locations[m.genome.species].union(m.location)
-                    else:
+                    if m.location is None:
+                        valid_locations = False
+                        break
+
+                    if m.genome.species not in locations:
                         union = m.location
-                    
+                    elif m.genome.species in locations:
+                        try:
+                            union = locations[
+                                m.genome.species].union(m.location)
+                        except AttributeError:
+                            raise AttributeError("%s" % str([gene_id,
+                                                             m.genome]))
+
                     if union is None:
                         valid_locations = False
                         break
-                    
+
                     locations[m.genome.species] = union
 
             if not alignments:
@@ -230,7 +239,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                        "based syntenic block %s" % locations]
                 LOGGER.log_message(" ".join(msg), label="WARN")
                 continue
-            
+
             assert len(locations) == len(species), locations
             for sp, loc in locations.items():
                 records.append([gene_id, loc])
@@ -554,10 +563,10 @@ def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file,
             exit(-1)
 
         ref_genes = ref_genes.tolist("stableid")
-    
+
     if limit:
         ref_genes = ref_genes[:limit]
-    
+
     if not introns:
         print("Getting orthologs %d genes" % len(ref_genes))
         get_one2one_orthologs(compara, ref_genes, outdir,
