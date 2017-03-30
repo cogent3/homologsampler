@@ -144,7 +144,8 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
     with click.progressbar(ref_genes,
                            label="Finding 1to1 intron orthologs") as ids:
         for gene_id in ids:
-            locations = defaultdict(list)
+            valid_locations = True
+            locations = {}
             gene = _get_gene_from_compara(compara, gene_id)
             if not gene:
                 LOGGER.log_message("stableid '%s' not found" % gene_id)
@@ -171,6 +172,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 try:
                     got = Counter(region.get_species_set())
                 except (AttributeError, AssertionError):
+                    got = None
                     # this is a PyCogent bug
                     error = sys.exc_info()
                     err_type = str(error[0]).split('.')[-1][:-2]
@@ -206,12 +208,32 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                     alignments.append(aln)
 
                 for m in region.members:
-                    locations[m.genome.species].append(m.location)
+                    if m.genome.species in locations:
+                        union = locations[m.genome.species].union(m.location)
+                    else:
+                        union = m.location
+                    
+                    if union is None:
+                        valid_locations = False
+                        break
+                    
+                    locations[m.genome.species] = union
 
             if not alignments:
                 msg = "stableid '%s' has no alignments" % gene_id
                 LOGGER.log_message(msg)
                 continue
+
+            if not valid_locations:
+                msg = ["stableid '%s' has" % gene_id,
+                       "inconsistent location data for gene",
+                       "based syntenic block %s" % locations]
+                LOGGER.log_message(" ".join(msg), label="WARN")
+                continue
+            
+            assert len(locations) == len(species), locations
+            for sp, loc in locations.items():
+                records.append([gene_id, loc])
 
             # we put a column of Ns between syntenic regions so that subsequent
             # sampling for tuple aligned columns does not construct artificial
@@ -232,28 +254,6 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 LOGGER.output_file(outfile_name)
 
             written += 1
-
-            # create unified location for each species and record
-            for sp in locations:
-                if len(locations[sp]) > 1:
-                    union = locations[sp][0]
-                    for loc in locations[sp][1:]:
-                        if loc is None:
-                            msg = ["stableid '%s' has" % gene_id,
-                                   "inconsistent location data for gene",
-                                   "based syntenic block %s" % locations[sp]]
-                            LOGGER.log_message(" ".join(msg), label="WARN")
-                            
-                            if union is not None:
-                                break
-                            
-                            raise ValueError(" ".join(msg))
-                        
-                        union = union.union(loc)
-                else:
-                    union = locations[sp][0]
-
-                records.append([gene_id, union])
 
     click.secho("Wrote %d files to %s" % (written, outpath), fg="green")
     if written > 0:
