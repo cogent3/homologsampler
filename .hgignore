@@ -18,3 +18,4 @@ build
 *.coverage
 *egg-info*
 *.cache*
+*.sublime*
