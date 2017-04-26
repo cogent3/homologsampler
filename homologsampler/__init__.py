@@ -10,7 +10,7 @@ from cogent3 import LoadSeqs, LoadTable, DNA
 from ensembldb3 import Compara, Genome, HostAccount, Species
 from scitrack import CachingLogger
 
-from homologsampler.util import (species_names_from_csv, missing_species_names,
+from homologsampler.util import (species_names_from_csv, missing_species_names, abspath,
                                  get_chrom_names, load_coord_names, display_available_dbs)
 
 __author__ = "Gavin Huttley"
@@ -341,7 +341,7 @@ _release = click.option('--release', help='Ensembl release.')
 _species = click.option('--species', required=True,
                         help='Comma separated list of species names.')
 _outdir = click.option('--outdir', required=True,
-                       type=click.Path(resolve_path=True),
+                       type=click.Path(resolve_path=False),
                        help='Path to write files.')
 _ref = click.option('--ref', default=None, help='Reference species.')
 _ref_genes_file = click.option('--ref_genes_file', default=None,
@@ -486,6 +486,7 @@ def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file,
             coord_names, not_strict, introns, method_clade_id, mask_features,
             logfile_name, limit, force_overwrite, test):
     """Command line tool for sampling homologous sequences from Ensembl."""
+    outdir = abspath(outdir)
     if not any([ref, ref_genes_file]):
         # just the command name, indicate they need to display help
         click.secho("Missing 'ref' and 'ref_genes_file'")

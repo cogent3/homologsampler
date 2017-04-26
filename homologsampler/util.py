@@ -1,3 +1,4 @@
+import os
 import sqlalchemy as sql
 from cogent3 import LoadTable
 from ensembldb3 import Species
@@ -67,3 +68,9 @@ def load_coord_names(infile_path):
     with open(infile_path) as infile:
         coord_names = [l.strip() for l in infile]
     return coord_names
+
+def abspath(path):
+    """returns absolute path, expanding the user"""
+    path = os.path.expanduser(path)
+    path = os.path.abspath(path)
+    return path
