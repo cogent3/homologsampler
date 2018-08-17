@@ -372,6 +372,9 @@ _logfile_name = click.option('--logfile_name', default="one2one.log",
                              help="Name for log file, written to outdir.")
 _version = click.version_option(version=__version__)
 
+_outpath = click.option('--outpath', required=True, default="gene_metadata.tsv",
+              help='Output file name.')
+
 
 @click.group()
 @_version
@@ -382,8 +385,7 @@ def cli():
 @cli.command()
 @_ensembl_account
 @_species
-@click.option('--outpath', required=True, default="gene_metadata.tsv",
-              help='Output file name.')
+@_outpath
 @_coord_names
 @_release
 @_limit
