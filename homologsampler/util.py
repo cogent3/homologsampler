@@ -32,9 +32,11 @@ def display_available_dbs(account, release=None):
     table.legend = "Values of 'None' indicate cogent does not have a value for that database name."
     return table
 
-def species_names_from_csv(species):
+
+def species_names_from_csv(ctx, param, species):
     """returns species names"""
-    species = [s.strip().lower() for s in species.split(',')]
+    if species is not None:
+        species = [s.strip().lower() for s in species.split(',')]
     return species
 
 def missing_species_names(names):

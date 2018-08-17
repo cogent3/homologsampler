@@ -339,6 +339,7 @@ _test = click.option('--test', is_flag=True,
                      "does not write files, prints seqs and exits.")
 _release = click.option('--release', help='Ensembl release.')
 _species = click.option('--species', required=True,
+                        callback=species_names_from_csv,
                         help='Comma separated list of species names.')
 _outdir = click.option('--outdir', required=True,
                        type=click.Path(resolve_path=False),
@@ -347,9 +348,8 @@ _ref = click.option('--ref', default=None, help='Reference species.')
 _ref_genes_file = click.option('--ref_genes_file', default=None,
                                type=click.Path(resolve_path=True,
                                                exists=True),
-                               help="File containing Ensembl stable "
-                               "identifiers for genes of interest. "
-                               "One identifier per line.")
+                               help=".csv or .tsv file with a header containing a"
+                               " stableid column")
 _coord_names = click.option('--coord_names', default=None,
                             type=click.Path(resolve_path=True),
                             help="File containing chrom/coord names to "
@@ -511,7 +511,6 @@ def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file,
         click.secho("\n".join(msg), fg="red")
         exit(-1)
 
-    species = species_names_from_csv(species)
     species_missing = missing_species_names(species)
     if species_missing:
         msg = ["The following species names don't match an Ensembl record."
@@ -557,6 +556,13 @@ def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file,
         ref_genes = [g.stableid
                      for g in _get_ref_genes(ref_genome, chroms, limit)]
     else:
+        if not (ref_genes_file.endswith('.csv') or
+                ref_genes_file.endswith('.tsv')):
+            msg = ("ref_genes_file must be either a comma/tab "
+                   "delimted with the corresponding suffix (.csv/.tsv)")
+            click.secho(msg, fg="red")
+            exit(-1)
+
         ref_genes = LoadTable(ref_genes_file)
         if "stableid" not in ref_genes.header:
             msg = "ref_genes_file does not have a 'stableid' column header"
