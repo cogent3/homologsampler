@@ -406,7 +406,6 @@ def dump_genes(ensembl_account, species, outpath, coord_names, release, limit):
     """Dump meta data table for genes from one species in release ENSEMBL_ACCOUNT
     and exits."""
     ensembl_account = _get_account(ensembl_account)
-    species = species_names_from_csv(species)
     if len(species) > 1:
         msg = "dump_genes handles single species only"
         click.secho(msg, fg="red")
@@ -463,7 +462,6 @@ def show_available_species(ensembl_account, release):
 def show_align_methods(ensembl_account, species, release):
     """Shows the align methods in release ENSEMBL_ACCOUNT and exits."""
     ensembl_account = _get_account(ensembl_account)
-    species = species_names_from_csv(species)
     missing_species = missing_species_names(species)
     if missing_species:
         msg = ["The following species names don't match an Ensembl record. "
