@@ -2,7 +2,7 @@ import os
 import gzip
 import warnings
 import sys
-from collections import Counter, defaultdict
+from collections import Counter
 
 import click
 
@@ -10,8 +10,10 @@ from cogent3 import LoadSeqs, LoadTable, DNA
 from ensembldb3 import Compara, Genome, HostAccount, Species
 from scitrack import CachingLogger
 
-from homologsampler.util import (species_names_from_csv, missing_species_names, abspath,
-                                 get_chrom_names, load_coord_names, display_available_dbs)
+from homologsampler.util import (species_names_from_csv, missing_species_names,
+                                 abspath,
+                                 get_chrom_names, load_coord_names,
+                                 display_available_dbs, )
 
 __author__ = "Gavin Huttley"
 __copyright__ = "Copyright 2014, Gavin Huttley"
@@ -25,7 +27,8 @@ __status__ = "Development"
 LOGGER = CachingLogger(create_dir=True)
 
 
-def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwrite, test):
+def get_one2one_orthologs(compara, ref_genes, outpath, not_strict,
+                          force_overwrite, test):
     """writes one-to-one orthologs of protein coding genes to outpath"""
 
     species = Counter(compara.species)
@@ -47,7 +50,8 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict, force_overwri
 
             syntenic = syntenic[0]
 
-            if not not_strict and (syntenic is None or Counter(syntenic.get_species_set()) != species):
+            if not not_strict and (syntenic is None or Counter(
+                    syntenic.get_species_set()) != species):
                 # skipping, not all species had a 1to1 ortholog for this gene
                 continue
 
@@ -131,13 +135,16 @@ def with_masked_features(aln, reverse=False):
     return aln
 
 
-def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id,
-                                    mask_features, outdir, force_overwrite, test):
+def get_syntenic_alignments_introns(compara, ref_genes, outpath,
+                                    method_clade_id,
+                                    mask_features, outdir, force_overwrite,
+                                    test):
     """writes Ensembl `method` syntenic alignments to ref_genes"""
     species = Counter(compara.species)
     common_names = list(map(Species.get_common_name, compara.species))
     filler = LoadSeqs(data=[(n, 'N')
-                            for n in common_names], moltype=DNA, array_align=False)
+                            for n in common_names], moltype=DNA,
+                      array_align=False)
 
     written = 0
     records = []
@@ -160,8 +167,10 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
                 written += 1
                 continue
 
-            regions = list(compara.get_syntenic_regions(region=gene.canonical_transcript,
-                                                        method_clade_id=str(method_clade_id)))
+            regions = list(
+                compara.get_syntenic_regions(region=gene.canonical_transcript,
+                                             method_clade_id=str(
+                                                 method_clade_id)))
             alignments = []
             for index, region in enumerate(regions):
                 if region is None:
@@ -275,7 +284,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath, method_clade_id
 def display_ensembl_alignment_table(compara):
     """prints the method_species_link table and then exits"""
     compara.method_species_links.Legend = \
-        "Assign the desired value from method_link_species_set_id to the"\
+        "Assign the desired value from method_link_species_set_id to the" \
         " method_clade_id argument"
     print(compara.method_species_links)
     exit(0)
@@ -295,6 +304,7 @@ def _get_account(ensembl_account):
 
 def _get_gene_from_compara(compara, stable_id):
     """returns gene instance from a compara db"""
+    gene = None
     for sp in list(compara._genomes.values()):
         gene = sp.get_gene_by_stableid(stable_id)
         if gene:
@@ -330,13 +340,13 @@ class Config(object):
 _ensembl_account = click.option('--ensembl_account',
                                 envvar='ENSEMBL_ACCOUNT',
                                 help="shell variable with MySQL account "
-                                "details, e.g. export "
-                                "ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
+                                     "details, e.g. export "
+                                     "ENSEMBL_ACCOUNT='myhost.com jill jills_pass'")
 _force_overwite = click.option('-F', '--force_overwrite',
                                is_flag=True, help="Overwrite existing files.")
 _test = click.option('--test', is_flag=True,
                      help="sets limit # queries to 2, "
-                     "does not write files, prints seqs and exits.")
+                          "does not write files, prints seqs and exits.")
 _release = click.option('--release', help='Ensembl release.')
 _species = click.option('--species', required=True,
                         callback=species_names_from_csv,
@@ -349,18 +359,18 @@ _ref_genes_file = click.option('--ref_genes_file', default=None,
                                type=click.Path(resolve_path=True,
                                                exists=True),
                                help=".csv or .tsv file with a header containing a"
-                               " stableid column")
+                                    " stableid column")
 _coord_names = click.option('--coord_names', default=None,
                             type=click.Path(resolve_path=True),
                             help="File containing chrom/coord names to "
-                            "restrict sampling to, one per line.")
+                                 "restrict sampling to, one per line.")
 _not_strict = click.option('--not_strict', is_flag=True,
                            help="Genes with an ortholog in any species are "
-                           "exported. Default is all species must have a "
-                           "ortholog.")
+                                "exported. Default is all species must have a "
+                                "ortholog.")
 _introns = click.option('--introns', is_flag=True,
                         help="Sample syntenic alignments of introns, requires"
-                        " --method_clade_id.")
+                             " --method_clade_id.")
 _method_clade_id = click.option('--method_clade_id',
                                 help="The value of method_link_species_set_id "
                                 "to use (see ) required if sampling introns.")
@@ -368,12 +378,14 @@ _mask_features = click.option('--mask_features', is_flag=True,
                               help="Intron masks repeats, exons, CpG islands.")
 _limit = click.option('--limit', type=int, default=0,
                       help="Limit to this number of genes.")
+_minlength = click.option('--minlength', type=int, default=0,
+                          help="Minimum length allowed.")
 _logfile_name = click.option('--logfile_name', default="one2one.log",
                              help="Name for log file, written to outdir.")
 _version = click.version_option(version=__version__)
 
 _outpath = click.option('--outpath', required=True, default="gene_metadata.tsv",
-              help='Output file name.')
+                        help='Output file name.')
 
 
 @click.group()
