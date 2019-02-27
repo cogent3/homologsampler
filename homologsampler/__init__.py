@@ -373,7 +373,8 @@ _introns = click.option('--introns', is_flag=True,
                              " --method_clade_id.")
 _method_clade_id = click.option('--method_clade_id',
                                 help="The value of method_link_species_set_id "
-                                "to use (see ) required if sampling introns.")
+                                     "required if sampling introns. Use "
+                                     "show_align_methods command for options")
 _mask_features = click.option('--mask_features', is_flag=True,
                               help="Intron masks repeats, exons, CpG islands.")
 _limit = click.option('--limit', type=int, default=0,
