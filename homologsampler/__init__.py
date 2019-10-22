@@ -6,7 +6,7 @@ from collections import Counter
 
 import click
 
-from cogent3 import LoadSeqs, LoadTable, DNA
+from cogent3 import make_aligned_seqs, make_table, DNA, make_unaligned_seqs
 from ensembldb3 import Compara, Genome, HostAccount, Species
 from scitrack import CachingLogger
 
@@ -65,7 +65,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict,
                 cds.name = name
                 seqs.append([name, cds])
 
-            seqs = LoadSeqs(data=seqs, aligned=False, array_align=False)
+            seqs = make_unaligned_seqs(data=seqs, array_align=False)
             if test:
                 print()
                 print(gene)
@@ -84,7 +84,7 @@ def get_one2one_orthologs(compara, ref_genes, outpath, not_strict,
     click.echo(msg)
 
     if written > 0:
-        metadata = LoadTable(header=["refid", "stableid", "location",
+        metadata = make_table(header=["refid", "stableid", "location",
                                      "description"], rows=records)
         metadata.write(os.path.join(outpath, "metadata.tsv"))
 
@@ -111,7 +111,7 @@ def renamed_seqs(aln):
         # a species occures more than once
         return None
 
-    return LoadSeqs(data=new, moltype=DNA, array_align=False)
+    return make_aligned_seqs(data=new, moltype=DNA, array_align=False)
 
 
 def with_masked_features(aln, reverse=False):
@@ -142,7 +142,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath,
     """writes Ensembl `method` syntenic alignments to ref_genes"""
     species = Counter(compara.species)
     common_names = list(map(Species.get_common_name, compara.species))
-    filler = LoadSeqs(data=[(n, 'N')
+    filler = make_aligned_seqs(data=[(n, 'N')
                             for n in common_names], moltype=DNA,
                       array_align=False)
 
@@ -275,7 +275,7 @@ def get_syntenic_alignments_introns(compara, ref_genes, outpath,
 
     click.secho("Wrote %d files to %s" % (written, outpath), fg="green")
     if written > 0:
-        metadata = LoadTable(header=["refid", "location"], rows=records)
+        metadata = make_table(header=["refid", "location"], rows=records)
         metadata.write(os.path.join(outpath, "metadata.tsv"))
 
     return
@@ -434,7 +434,7 @@ def dump_genes(ensembl_account, species, outpath, coord_names, release, limit):
         records.append([g.stableid, g.biotype, g.location, g.description])
 
     if records:
-        table = LoadTable(header=["stableid", "biotype", "location",
+        table = make_table(header=["stableid", "biotype", "location",
                                   "description"], rows=records)
         table.write(outpath)
         click.secho("Wrote %d genes to %s" % (table.shape[0], outpath),
@@ -576,7 +576,7 @@ def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file,
             click.secho(msg, fg="red")
             exit(-1)
 
-        ref_genes = LoadTable(ref_genes_file)
+        ref_genes = make_table(ref_genes_file)
         if "stableid" not in ref_genes.header:
             msg = "ref_genes_file does not have a 'stableid' column header"
             click.secho(msg, fg="red")
@@ -596,6 +596,29 @@ def one2one(ensembl_account, species, release, outdir, ref, ref_genes_file,
         get_syntenic_alignments_introns(compara, ref_genes, outdir,
                                         method_clade_id, mask_features,
                                         outdir, force_overwrite, test)
+
+
+@cli.command()
+@_ensembl_account
+@_species
+@_outdir
+@_coord_names
+@_release
+@_minlength
+@_limit
+def intergenic_aligns(ensembl_account, species, outdir, coord_names,
+                      release, minlength, limit):
+    """Exports intergenic alignments"""
+    outdir = abspath(outdir)
+    ensembl_account = _get_account(ensembl_account)
+    args = locals()
+    args['ensembl_account'] = str(ensembl_account)
+    LOGGER.log_message(str(args), label="params")
+
+    if coord_names:
+        chroms = load_coord_names(coord_names)
+    else:
+        chroms = None
 
 
 if __name__ == "__main__":

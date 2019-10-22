@@ -1,6 +1,7 @@
 import os
 import sqlalchemy as sql
 from cogent3 import LoadTable
+from cogent3.util.misc import get_merged_overlapping_coords
 from ensembldb3 import Species
 from ensembldb3.host import get_db_name
 
@@ -76,3 +77,17 @@ def abspath(path):
     path = os.path.expanduser(path)
     path = os.path.abspath(path)
     return path
+
+def get_intergenic_coords(gene_coords, minlength=None):
+    """returns coords for spans between genes
+    If minlength, only spans of this size returned
+    """
+    coords = []
+    _, last_end = gene_coords[0]
+    for start, end in gene_coords[1:]:
+        diff = start - last_end
+        if minlength is None or (minlength
+                        and diff >= minlength):
+            coords.append([last_end, start])
+        last_end = end
+    return coords
