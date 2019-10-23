@@ -66,7 +66,7 @@ def get_one2one_orthologs(
                 cds.name = name
                 seqs.append([name, cds])
 
-            seqs = make_unaligned_seqs(data=seqs, array_align=False)
+            seqs = make_unaligned_seqs(data=seqs)
             if test:
                 print()
                 print(gene)
