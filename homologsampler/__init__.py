@@ -7,7 +7,8 @@ from collections import Counter
 import click
 from scitrack import CachingLogger
 
-from cogent3 import DNA, make_aligned_seqs, make_table, make_unaligned_seqs
+from cogent3 import (DNA, load_table, make_aligned_seqs, make_table,
+                     make_unaligned_seqs)
 from ensembldb3 import Compara, Genome, HostAccount, Species
 from homologsampler.util import (abspath, display_available_dbs,
                                  get_chrom_names, load_coord_names,
@@ -642,7 +643,7 @@ def one2one(
             click.secho(msg, fg="red")
             exit(-1)
 
-        ref_genes = make_table(ref_genes_file)
+        ref_genes = load_table(ref_genes_file)
         if "stableid" not in ref_genes.header:
             msg = "ref_genes_file does not have a 'stableid' column header"
             click.secho(msg, fg="red")
