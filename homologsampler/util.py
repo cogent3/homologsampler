@@ -8,7 +8,7 @@ from ensembldb3 import Species
 from ensembldb3.host import get_db_name
 
 __author__ = "Gavin Huttley"
-__copyright__ = "Copyright 2014, Gavin Huttley"
+__copyright__ = "Copyright 2019, Gavin Huttley"
 __credits__ = ["Gavin Huttley"]
 __license__ = "BSD"
 __version__ = "0.11"

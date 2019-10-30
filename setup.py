@@ -3,7 +3,7 @@ from setuptools import setup
 import sys
 
 __author__ = "Gavin Huttley"
-__copyright__ = "Copyright 2016, Gavin Huttley"
+__copyright__ = "Copyright 2019, Gavin Huttley"
 __credits__ = ["Gavin Huttley"]
 __license__ = "BSD"
 __version__ = "0.11"
@@ -12,9 +12,9 @@ __email__ = "Gavin.Huttley@anu.edu.au"
 __status__ = "Development"
 
 # Check Python version, no point installing if unsupported version inplace
-if sys.version_info < (2, 7):
+if sys.version_info < (3, 6):
     py_version = ".".join([str(n) for n in sys.version_info])
-    raise RuntimeError("Python-2.7 or greater is required, Python-%s used." % py_version)
+    raise RuntimeError("Python-3.6 or greater is required, Python-%s used." % py_version)
 
 short_description = "homologsampler"
 
@@ -43,14 +43,15 @@ setup(
             ],
     packages=['homologsampler'],
     install_requires=[
-              # 'cogent',
+              'cogent3',
+              'ensembldb3',
               'scitrack',
-              'click'
+              'click',
           ],
     entry_points={
             'console_scripts': ['homolog_sampler=homologsampler.__init__:cli',
                             ],
         },
-    url="https://bitbucket.org/gavin.huttley/homologsampler",
+    url="https://github.com/cogent3/homologsampler",
     extras_require={"mysql": ["PyMySQL", "sqlalchemy"]},
     )
