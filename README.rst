@@ -12,19 +12,9 @@ Increasing the number of biotypes and the homology relationships will be done at
 Installation
 ************
 
-Because we rely on PyCogent, whose install depends on numpy in a way that standard package installers don't cope with, the following is the required order of statements. (Note, I assume you already have pip_ installed.)
+First install `ensembldb3 <https://github.com/cogent3/ensembldb3>`_, then do::
 
-Install numpy and (because the HomologSampler is currently not up on PyPi) mercurial and the MySQL related dependencies
-
-::
-
-    $ pip install numpy mercurial sqlalchemy pymysql
-
-Then install HomologSampler directly from the bitbucket repo
-
-::
-
-    $ pip install hg+ssh://hg@bitbucket.org/gavin.huttley/homologsampler
+    $ pip install git+http://github.com/cogent3/homologsampler.git@master#egg=homologsampler
 
 **************
 Main help page
