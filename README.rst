@@ -2,7 +2,7 @@
 HomologSampler
 ##############
 
-This is a command line tool for sampling related sequences from Ensembl. It requires PyCogent, Numpy, SQLAlchemy, PyMysql, Click and SciTrack. The latter basically logs commands, file inputs and outputs, to assist with reproducible research.
+This is a command line tool for sampling related sequences from Ensembl. It requires cogent3, numpy, SQLAlchemy, PyMysql, click and scitrack. The latter basically logs commands, file inputs and outputs, to assist with reproducible research.
 
 HomologSampler has one command line tool ``homolog_sampler``. At present, this tool provides capabilities to support sampling one-to-one orthologs from protein coding genes stored in an Ensembl_ MySQl database. It can either write out the protein coding sequences from the canonical CDS, or it can write out the Ensembl multiple sequence alignment of the entire gene with annotated features masked.
 
