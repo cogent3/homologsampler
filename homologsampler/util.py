@@ -2,7 +2,7 @@ import os
 
 import sqlalchemy as sql
 
-from cogent3 import LoadTable
+from cogent3 import make_table
 from cogent3.util.misc import get_merged_overlapping_coords
 from ensembldb3 import Species
 from ensembldb3.host import get_db_name
@@ -31,8 +31,8 @@ def display_available_dbs(account, release=None):
             species_name = common_name = "-"
         rows.append([db_name.release, db_name.name, species_name, common_name])
 
-    table = LoadTable(
-        header=["Release", "Db Name", "Species", "Common Name"], rows=rows, space=2
+    table = make_table(
+        header=["Release", "Db Name", "Species", "Common Name"], data=rows, space=2
     )
     table = table.sorted(["Release", "Db Name"])
     table.legend = (
@@ -57,7 +57,7 @@ def missing_species_names(names):
             missing.append([name])
 
     if missing:
-        result = LoadTable(header=["MISSING SPECIES"], rows=missing)
+        result = make_table(header=["MISSING SPECIES"], data=missing)
     else:
         result = None
     return result

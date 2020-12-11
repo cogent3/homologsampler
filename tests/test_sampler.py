@@ -1,6 +1,6 @@
 from click.testing import CliRunner
 
-from cogent3 import LoadTable
+from cogent3 import make_table
 from homologsampler import cli
 
 
@@ -22,7 +22,7 @@ def _parse_db_display(output, columns):
 
             line = line.split()
             rows.append(line[: len(columns)])
-        table = LoadTable(header=header, rows=rows)
+        table = make_table(header=header, data=rows)
     else:
         table = None
 
